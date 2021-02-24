@@ -37,7 +37,7 @@ public class DanceTeamInit : MonoBehaviour
 
             teamACharacterNames = nameGenerator.ReturnTeamCharacterNames(dancersPerSide);
 
-            if (teamACharacterNames.Length < dancersPerSide || teamACharacterNames.Length <= 0)
+            if (teamACharacterNames.Length < dancersPerSide)
 			{
                 Debug.LogWarning("[DanceTeamInit]" + " There was an error returning Dance Team A's Character names!");
                 return;
@@ -76,15 +76,5 @@ public class DanceTeamInit : MonoBehaviour
                 teamB.InitaliseTeamFromNames(dancerPrefab, DanceTeam.Direction.Right, teamBCharacterNames);
             }
         }
-       
-
-
-
-
-        // We need to set out team names using teamA.SetTroupeName.
-        // We need to generate some character names for our teams to use from our CharacterNameGenerator.
-        // We need to spawn in some dancers using teamA.InitialiseTeamFromNames.
-
-        Debug.LogWarning("InitTeams called, needs to create character names via CharacterNameGenerator and get them into the team.InitaliseTeamFromNames");
     }
 }

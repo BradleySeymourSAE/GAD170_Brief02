@@ -58,6 +58,7 @@ public class Character : MonoBehaviour
     /// A float used to display what the chance of winning the current fight is.
     /// </summary>
     public float percentageChanceToWin;
+    float currentHealth;
 
 
     [Header(styled + " Character Settings (Other) " + styled)]
@@ -80,7 +81,7 @@ public class Character : MonoBehaviour
     /// </summary>
     public void GeneratePhysicalStatsStats()
     {
-        Debug.LogWarning("Generate Physical Stats has been called");
+        // Debug.LogWarning("Generate Physical Stats has been called");
 
         // Let's set up agility, intelligence and strength to some default Random values.
         agility = Random.Range(1, 4);
@@ -97,7 +98,7 @@ public class Character : MonoBehaviour
     /// </summary>
     public void CalculateDancingStats(int _agility, int _strength, int _intelligence)
     {
-        Debug.LogWarning("Generate Calculate Dancing Stats has been called");
+       //  Debug.LogWarning("Generate Calculate Dancing Stats has been called");
         // take our physical stats and translate them into dancing stats,
         // Style = Agility * .5f
         // Rhythm = Strength * 1.0f 
@@ -146,17 +147,20 @@ public class Character : MonoBehaviour
     /// </summary>
     public void DealDamage(float amount)
     {
+        float _currentHealth = mojoRemaining;
 
-        // Check to see whether the character is dead or not 
+        _currentHealth -= amount;
 
-        // If the character is dead
-            // Remove the character from their teams dancer list 
+        if (_currentHealth <= 0f)
+		{
+            myTeam.RemoveDancerFromActive(this);
+		}
+        else
+		{
+            mojoRemaining = _currentHealth;
+		}
 
-        // If the character is not dead
-            // Remove some hp from our character 
-                // Check if the character is dead
-                    // Return true 
-                    // Return false
+        Debug.Log("Current Health:  " + _currentHealth + " MOJO Remaining: " + mojoRemaining);
     }
 
     /// <summary>
@@ -202,8 +206,6 @@ public class Character : MonoBehaviour
             previousThreshold = xpThreshold;
             LevelUp(currentXp, previousThreshold);
         }
-
-
     }
 
     /// <summary>
@@ -242,6 +244,7 @@ public class Character : MonoBehaviour
                 hasReachedMilestone = true;
                 break;
             default:
+                hasReachedMilestone = false;
                 break;
 		}
 
@@ -259,29 +262,29 @@ public class Character : MonoBehaviour
     /// <summary>
     /// A function used to assign a random amount of points ot each of our skills.
     /// </summary>
-    public void DistributePhysicalStatsOnLevelUp(int p_pointsPool, int addedIntelligencePoint)
+    public void DistributePhysicalStatsOnLevelUp(int statPoints, int addIntelligencePoint)
     {
-        Debug.LogWarning("DistributePhysicalStatsOnLevelUp has been called " + p_pointsPool);
+        Debug.LogWarning("DistributePhysicalStatsOnLevelUp has been called " + statPoints);
        
         int s_currentLevel = level;
-        int remainder = p_pointsPool;
+        int remainder;
         int _strengthPoints, _agilityPoints;
 
 
-        if (addedIntelligencePoint == 1)
-            intelligence += addedIntelligencePoint;
+        if (addIntelligencePoint == 1)
+            intelligence += addIntelligencePoint;
 
         if (agility > strength)
 		{
-            _strengthPoints = Random.Range(1, (p_pointsPool - 2));
-            remainder = p_pointsPool - _strengthPoints;
+            _strengthPoints = Random.Range(1, (statPoints - 2));
+            remainder = statPoints - _strengthPoints;
             strength += _strengthPoints;
             agility += remainder;
 		}
         else if (strength > agility)
 		{
-            _agilityPoints = Random.Range(1, (p_pointsPool - 2));
-            remainder = p_pointsPool - _agilityPoints;
+            _agilityPoints = Random.Range(1, (statPoints - 2));
+            remainder = statPoints - _agilityPoints;
             agility += _agilityPoints;
             strength += remainder;
 		}
@@ -289,8 +292,8 @@ public class Character : MonoBehaviour
 		{
             if (strength == agility)
 			{
-                _strengthPoints = Random.Range(1, (p_pointsPool + 1));
-                _agilityPoints = p_pointsPool - _strengthPoints;
+                _strengthPoints = Random.Range(1, (statPoints + 1));
+                _agilityPoints = statPoints - _strengthPoints;
                 agility += _agilityPoints;
                 strength += _strengthPoints;
 			}
@@ -324,7 +327,7 @@ public class Character : MonoBehaviour
         // After calculating the characters physical stats we need to recalculate 
         // the characters dancing stats using the updated Strength, Agility and Intelligence Values 
 
-        Debug.Log("Intelligence: " + intelligence + " Agility: " + agility + " Strength: " + strength);
+       //  Debug.Log("Intelligence: " + intelligence + " Agility: " + agility + " Strength: " + strength);
 
         CalculateDancingStats(agility, strength, intelligence);
     }
@@ -335,15 +338,16 @@ public class Character : MonoBehaviour
     /// Is called inside of our DanceTeam.cs is used to set the characters name!
     /// </summary>
     /// <param name="characterName"></param>
-    public void AssignName(CharacterName characterName)
+    public void AssignName(CharacterName _character)
     {
-        charName = characterName;
-        if(nickText != null)
-        {
-            nickText.text = charName.nickname;
+        charName = _character;
+        
+        if (nickText != null)
+		{
+            nickText.text = charName.firstName + " the " + charName.descriptor;
             nickText.transform.LookAt(Camera.main.transform.position);
-            //text faces the wrong way so
+
             nickText.transform.Rotate(0, 180, 0);
-        }
+		}
     }
 }

@@ -29,6 +29,9 @@ public class DanceTeam : MonoBehaviour
     {
         Debug.LogWarning("AddNewDancer called, it needs to put dancer in both lists and set the dancers team.");
         // we probably want to add our new dancers to our all dancers and our active dancers lists here..
+
+        allDancers.Add(dancer);
+        activeDancers.Add(dancer);
     }
 
     /// <summary>
@@ -40,6 +43,15 @@ public class DanceTeam : MonoBehaviour
         Debug.LogWarning("RemoveFromActive called, it needs to take the dancer out of the active dancers list");  
         // This gets called when our team mate dies :(
         // We probably want to remove the dancer passed in from our active dancer list.
+
+        foreach (Character _n in activeDancers)
+		{
+            Debug.Log(_n);
+
+		}
+
+      
+		
     }
 
     /// <summary>

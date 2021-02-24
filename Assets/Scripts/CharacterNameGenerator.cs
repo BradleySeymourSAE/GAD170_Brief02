@@ -1,7 +1,8 @@
-﻿using System.Collections;
+﻿using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Random = System.Random;
+using Random = UnityEngine.Random;
 
 /// <summary>
 /// Functions to complete:
@@ -27,7 +28,7 @@ public class CharacterNameGenerator : MonoBehaviour
     /// </summary>
     public void CreateNames()
     {
-        Debug.LogWarning("Create Names Called");
+       // Debug.LogWarning("Create Names Called");
        if (firstNames.Count <= 0)
             firstNames = new List<string> { 
                 "Don", 
@@ -100,29 +101,28 @@ public class CharacterNameGenerator : MonoBehaviour
     /// <returns></returns>
     public CharacterName[] ReturnTeamCharacterNames(int namesNeeded)
     {
-        Debug.LogWarning("CharacterNameGenerator called, it needs to fill out the names array with unique randomly constructed character names");
+       //  Debug.LogWarning("CharacterNameGenerator called, it needs to fill out the names array with unique randomly constructed character names");
         CharacterName[] names = new CharacterName[namesNeeded]; 
-        CharacterName _result = new CharacterName(string.Empty, string.Empty, string.Empty, string.Empty);
-
-
+        
         for (int i = 0; i < names.Length; i++)
         {
-           
-            Random _random = new Random();
+            CharacterName _name = new CharacterName
+            { 
+                firstName = firstNames[Random.Range(0, firstNames.Count)],
+                lastName = lastNames[Random.Range(0, lastNames.Count)],
+                nickname = nicknames[Random.Range(0, nicknames.Count)],
+                descriptor = descriptors[Random.Range(0, descriptors.Count)],
+            };
+
+            //For every name we need to generate, we need to assign a random first name, last name, nickname and descriptor to each
 
 
-            //For every name we need to generate, we need to assign a random first name, last name, nickname and descriptor to each.
-            //Below is an example of setting the first name of the emptyName variable to the string "Blank".
-            _result.firstName = firstNames[_random.Next(0, names.Length)];
-            _result.lastName = lastNames[_random.Next(0, names.Length)];
-            _result.nickname = nicknames[_random.Next(0, names.Length)];
-            _result.descriptor = descriptors[_random.Next(0, names.Length)];
-
-            Debug.Log("RESULT: " + " First Name: " + _result.firstName + " Last Name: " + _result.lastName + " Nick: " + _result.nickname + " Descriptor: " + _result.descriptor);
-            names[i] = _result;
+            names[i] = _name;
         }
 
-        Debug.Log("Generated Names: " + names);
+        // Debugging: 
+        // foreach (CharacterName _name in names)
+        // Debug.Log(_name.firstName);
 
         //Returns an array of names that we just created.
         return names;
