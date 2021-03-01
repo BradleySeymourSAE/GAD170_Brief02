@@ -15,6 +15,7 @@ public class Character : MonoBehaviour
     public const string styled = "---";
 
     public CharacterName charName; // This is a reference to an instance of the characters name script.
+    public string character_name;
 
     [Range(0.0f, 1.0f)]
     public float mojoRemaining = 1; // This is the characters hp this is a float 0-100 but is normalised to 0.0 - 1.0;
@@ -58,7 +59,7 @@ public class Character : MonoBehaviour
     /// A float used to display what the chance of winning the current fight is.
     /// </summary>
     public float percentageChanceToWin;
-    float currentHealth;
+    public float currentHealth;
 
 
     [Header(styled + " Character Settings (Other) " + styled)]
@@ -348,6 +349,8 @@ public class Character : MonoBehaviour
             nickText.transform.LookAt(Camera.main.transform.position);
 
             nickText.transform.Rotate(0, 180, 0);
-		}
+		
+            character_name = nickText.text;
+        }
     }
 }
