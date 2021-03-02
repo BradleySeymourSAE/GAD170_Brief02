@@ -22,7 +22,7 @@ public class FightManager : MonoBehaviour
     [Tooltip("The amount of time to wait between initiaing the fight")]
     private float fightAnimTime = 2;  //An amount to wait between initiating the fight, and the fight begining, so we can see some of that sick dancing.
     public float lossRatio = 1.5f;
-
+    public float powerLevelScalingFactor = 3.0f;
 
     /// <summary>
     /// Returns a float of the percentage chance to win the fight based on your characters current stats.
@@ -66,95 +66,72 @@ public class FightManager : MonoBehaviour
 
 
        // Let's get the dance power levels from our dancers.
-        int teamADancerPowerLevel = teamADancer.ReturnDancePowerLevel();
-        int teamBDancerPowerLevel = teamBDancer.ReturnDancePowerLevel();
-        int winner = 0;
+        int dancerAPowerLevel = teamADancer.ReturnDancePowerLevel();
+        int dancerBPowerLevel = teamBDancer.ReturnDancePowerLevel();
+        var winner = 0;
 
         // by default we set the winner to be character a, for defeated we set it to B.
-        var _winningDancer = teamADancer;
-        var _defeatedDancer = teamBDancer;
+        var winnerDancer = teamADancer;
+        var defeatedDancer = teamBDancer;
 
 
-        // Tells each dancer that they are selcted and sets the animation to dance.
+        // We tells each dancer that they are selcted and sets the animation to dance.
         SetUpAttack(teamADancer);
         SetUpAttack(teamBDancer);
 
         // Tells the system to wait X number of seconds until the fight to begins.
         yield return new WaitForSeconds(fightAnimTime);
 
-
-
-        if (teamADancerPowerLevel == teamBDancerPowerLevel)
-            winner = 0;
-        else if (teamADancerPowerLevel > teamBDancerPowerLevel)
+        float outcome = 0.0f;
+   
+        // Get both players current level 
+        Debug.Log("Dancer " + teamADancer.character_name + " power level is " + dancerAPowerLevel + ", currently fighting dancer " + teamBDancer.character_name + " with a power level of " + dancerBPowerLevel);
+       
+        if (dancerAPowerLevel > dancerBPowerLevel)
+		{
+            // Dancer from Team A won 
+            Debug.LogWarning("Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")" + " WON against Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")");
+            winnerDancer = teamADancer;
+            defeatedDancer = teamBDancer;
             winner = 1;
+		}
+        else if (dancerAPowerLevel < dancerBPowerLevel)
+		{
+            // Dancer from Team B Won
+            Debug.LogWarning("Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")" + " WON against Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")");
+            winner = -1;
+            winnerDancer = teamBDancer;
+            defeatedDancer = teamADancer;
+		}
         else
-            if (teamADancerPowerLevel < teamBDancerPowerLevel)
-                winner = -1;
-        
-
-        int baseExperience = teamADancer.experienceBase;
-        int loserExperience = (int)(baseExperience / lossRatio);
-        int currentTeamADancerLevel = teamADancer.level;
-        int currentTeamBDancerLevel = teamBDancer.level;
+		{
+            if (dancerAPowerLevel == dancerBPowerLevel)
+			{
+                // It was a draw 
+                winner = 0;
+                winnerDancer = teamADancer;
+                defeatedDancer = teamBDancer;
+                Debug.LogWarning("Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")" + " DRAWED with " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")");
+			}
+		}
 
         switch (winner)
-        {
+		{
             case 0:
-                // If there was a draw we can assign base experience to both 
-                // add the other dancers experience 
-
-                int teamADancerXP = baseExperience + (currentTeamADancerLevel * 2);
-                int teamBDancerXP = baseExperience + (currentTeamBDancerLevel * 2);
-
-
-                teamADancer.AddXP(teamADancerXP);
-                teamBDancer.AddXP(teamBDancerXP);
+                outcome = 0;
                 break;
             case 1:
-                // Team A won
-                baseExperience = baseExperience + (int)(currentTeamADancerLevel * Random.Range(1f, 2.5f));
-
-                _winningDancer = teamADancer;
-                _defeatedDancer = teamBDancer;
-
-                teamADancer.AddXP(baseExperience);
-                teamBDancer.AddXP(loserExperience);
+                outcome = 100f;
                 break;
             case -1:
-                // Team B won
-                baseExperience = baseExperience + (int)(currentTeamBDancerLevel * Random.Range(1f, 2.5f));
-
-                _winningDancer = teamBDancer;
-                _defeatedDancer = teamADancer;
-
-                teamADancer.AddXP(loserExperience);
-                teamBDancer.AddXP(baseExperience);
+                outcome = -100f;
                 break;
-            default:
-                Debug.LogWarning("Error in FightManager (Switch Statement)");
-                break;
-        }
-
-        float outcome = 0f;
-       
-        if (winner == 0f)
-            outcome = 0;
-        else if (winner == 1)
-            outcome = (float)(winner * 100f);
-        else
-            if (winner == -1)
-            outcome = (float)(winner * -100f);
+		}            
 
 
-
-        Debug.Log("Winning Outcome Percentage: " + outcome);
-
-        if (outcome <= 0f)
-            BattleLog.Log("Fight resulted in a draw!", drawCol);
 
         // Pass on the winner/loser and the outcome to our fight completed function.
-        FightCompleted(_winningDancer, _defeatedDancer, outcome);
+        FightCompleted(winnerDancer, defeatedDancer, outcome);
         yield return null;
     }
 

@@ -110,15 +110,16 @@ public class Character : MonoBehaviour
         // Convert integer value to a float so that we can modify the value
         // Then return that value back to an integer 
 
-        if (agilityMultiplier <= 0.0f) agilityMultiplier = 0.5f;
-        if (strengthMultiplier <= 0.0f) strengthMultiplier = 1f;
-        if (intelligenceMultiplier <= 0.0f) intelligenceMultiplier = 2f;
+        if (agilityMultiplier <= 0.0f) 
+            agilityMultiplier = 0.5f;
 
-        // Parse the Characters Dance Attrs (Style, Dance, Rhythm) to float 
+        if (strengthMultiplier <= 0.0f) 
+            strengthMultiplier = 1f;
 
-        float _style = _agility * agilityMultiplier;
-        float _rhythm = _strength * strengthMultiplier;
-        float _luck = _intelligence * Random.Range(0.0f, intelligenceMultiplier);
+        if (intelligenceMultiplier <= 0.0f) 
+            intelligenceMultiplier = 2f;
+
+        // Parse the Characters Dance Attrs (Style, Dance, Rhythm) to float
 
         style = (int)(_agility * agilityMultiplier);
         rhythm = (int)(_strength * strengthMultiplier);
@@ -147,30 +148,38 @@ public class Character : MonoBehaviour
     /// We probably want to use this to remove some hp (mojo) from our character.....
     /// Then we probably want to check to see if they are dead or not from that damage and return true or false.
     /// </summary>
-    public void DealDamage(float amount)
+    public bool DealDamage(float amount)
     {
+
+        Debug.Log("Damage Amount: " + amount);
         // Set a local variable to check whether the player has already lost all his HP
-        float _currentHealth = mojoRemaining;
-        
-        // Deduct the amount
-        _currentHealth -= amount;
+
+        float _currentHealth = (int)(amount / 100f);
+
+        Debug.Log("_currentHealth" + _currentHealth);
+
+
+        mojoRemaining -= _currentHealth;
+       
+        Debug.Log("mojoRemaining: " + mojoRemaining);
+
+
 
         // Check if the current health is less than or equal to 0.0f, and remove the dance from the active
         // list if they are 'dead'
-        if (_currentHealth <= 0.0f)
+        if (mojoRemaining <= 0.0f)
+        { 
+            Debug.Log("Player is Dead!");
+            
+            
             myTeam.RemoveDancerFromActive(this);
+            return true;
+        }
         else
+        { 
             mojoRemaining = _currentHealth;
-       
-        // Otherwise the mojoRemaining is equal to the current health.
-        // We can also set the current health variable to check in the inspector aswell.
-        if (_currentHealth != null)
-            currentHealth = _currentHealth;
-        else
-            currentHealth = mojoRemaining;
-        		
-
-        Debug.Log("Current Health:  " + _currentHealth + " MOJO Remaining: " + mojoRemaining);
+            return false;
+        }
     }
 
     /// <summary>
@@ -179,7 +188,7 @@ public class Character : MonoBehaviour
     /// <returns></returns>
     public int ReturnDancePowerLevel()
     {
-        int _luckiness = Random.Range(1, luck);
+        int _luckiness = Random.Range(1, luck + 1);
         int totalAttributes = 6;
         int s_currentLevel = level;
         int basePoints = agility + strength + intelligence + rhythm + style;
@@ -223,14 +232,14 @@ public class Character : MonoBehaviour
     /// </summary>
     private void LevelUp(int p_currentXP, int p_previousThreshold)
     {
-        Debug.LogWarning("Level up has been called");
+      //  Debug.LogWarning("Level up has been called");
         int s_currentLevel = level;
         int maxLevel = 99;
         int basePoints = 5;
         int addIntelligence = 0;
-        bool hasReachedMilestone = false;
+        bool hasReachedMilestone;
 
-        Debug.Log("Current XP: " + p_currentXP + " Threshold: " + xpThreshold + " Not Level greater than or equal to maxLevel: " + !(level >= maxLevel));
+        Debug.Log("Current xp " + p_currentXP + " has been added. The current players xp threshold is " + xpThreshold + " Is the dancers level not greater than or equal to the max level? " + !(s_currentLevel >= maxLevel));
         if (p_currentXP >= xpThreshold && !(s_currentLevel >= maxLevel))
             level += 1;
 
@@ -274,7 +283,7 @@ public class Character : MonoBehaviour
     /// </summary>
     public void DistributePhysicalStatsOnLevelUp(int statPoints, int addIntelligencePoint)
     {
-        Debug.LogWarning("DistributePhysicalStatsOnLevelUp has been called " + statPoints);
+       // Debug.LogWarning("DistributePhysicalStatsOnLevelUp has been called " + statPoints);
        
         int s_currentLevel = level;
         int remainder;
