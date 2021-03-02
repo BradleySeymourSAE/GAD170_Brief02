@@ -1,6 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
+
 
 /// <summary>
 /// Functions to complete:
@@ -9,68 +12,149 @@ using UnityEngine;
 /// </summary>
 public class FightManager : MonoBehaviour
 {
+    private const string styled = "---";
+    [Header(styled + " Fight Manager Settings " + styled)]
+    [Tooltip("Reference to the BattleSystem script in our scene")]
     public BattleSystem battleSystem; //A reference to our battleSystem script in our scene
+    [Tooltip("Sets the battle log message's color")]
     public Color drawCol = Color.gray; // A colour you might want to set the battle log message to if it's a draw.
-    private float fightAnimTime = 2; //An amount to wait between initiating the fight, and the fight begining, so we can see some of that sick dancing.
+    [SerializeField]
+    [Tooltip("The amount of time to wait between initiaing the fight")]
+    private float fightAnimTime = 2;  //An amount to wait between initiating the fight, and the fight begining, so we can see some of that sick dancing.
+    public float lossRatio = 1.5f;
+
 
     /// <summary>
     /// Returns a float of the percentage chance to win the fight based on your characters current stats.
     /// </summary>
-    /// <param name="charOne"></param>
-    /// <param name="charTwo"></param>
+    /// <param name="p_TeamADancer"></param>
+    /// <param name="p_TeamBDancer"></param>
     /// <returns></returns>
-    public float SimulateBattle(Character charOne, Character charTwo)
+    public float SimulateBattle(Character p_TeamADancer, Character p_TeamBDancer)
     {
-        int charOnePoints = charOne.ReturnDancePowerLevel(); // our current powerlevel
-        int charTwoPoints = charTwo.ReturnDancePowerLevel(); // our opponents current power level
+        int currentTeamADancerPoints = p_TeamADancer.ReturnDancePowerLevel(); // our current powerlevel
+        int currentTeamBDancerPoints = p_TeamBDancer.ReturnDancePowerLevel(); // our opponents current power level
 
-        if (charOnePoints <= 0 || charTwoPoints <= 0)
-        {
-            Debug.LogWarning(" Simulate battle called; but char 1 or char 2 battle points is 0, most likely the logic has not be setup for this yet");
-        }
+        if (currentTeamADancerPoints <= 0 || currentTeamBDancerPoints <= 0)
+            Debug.LogWarning("Simulate battle called; but char 1 or char 2 battle points is 0, most likely the logic has not be setup for this yet");
+        
+        // We need to cast integer values to a float
+        float _teamADancerPoints = currentTeamADancerPoints;
+        float _teamBDancerPoints = currentTeamBDancerPoints;
+        double winningPercentage;
 
-        // we probably want to compare our powerlevels...hope they aren't over 9000.
-        // we need to return a normalised (decimal) value....how much do you remember about percentages?
-        // don't forget that we are returning a float...but diving 2 ints...what happens?
+        // calculate the winning percentage by setting it as a normalised (decimal) value
 
-        Debug.LogWarning("Simulate battle called, but the logic hasn't been set up yet, so defaulting to 0");
-        return 0;
+        if (_teamADancerPoints > _teamBDancerPoints)
+            winningPercentage = (double)(_teamBDancerPoints / _teamADancerPoints) * 100f;
+        else
+            winningPercentage = (double)(_teamADancerPoints / _teamBDancerPoints) * 100f;
+
+        // We want to return a float value - as this is what the function REQUIRES to return
+
+        Debug.Log("Chance of winning: " + (float)Math.Round(winningPercentage, 2));        
+
+        // Return winning percentage float as a value for 2 decimal places 
+        return (float)Math.Round(winningPercentage, 2);
     }
 
 
     //TODO this function is all you need to modify, in this script.
     //You just need determine who wins/loses/draws etc.
-    IEnumerator Attack(Character teamACharacter, Character teamBCharacter)
+    IEnumerator Attack(Character teamADancer, Character teamBDancer)
     {
 
-        Character winner = teamACharacter;//defaulting the winner to TeamA.
-        Character defeated = teamBCharacter;//defaulting the loser to TeamB.
-        float outcome = 0;// the outcome from the fight, i.e. the % that the winner has won by...fractions could help us calculate this, but start with whole numbers i.e. 0 = draw, and 1 = 100% win.
-       
-        // We want to get some battle points from each of our characters...instead of just 0....is there a function in the Character script that could help us?
-        int teamABattlePoints = teamACharacter.ReturnDancePowerLevel();
-        int teamBBattlePoints = teamBCharacter.ReturnDancePowerLevel();
+
+       // Let's get the dance power levels from our dancers.
+        int teamADancerPowerLevel = teamADancer.ReturnDancePowerLevel();
+        int teamBDancerPowerLevel = teamBDancer.ReturnDancePowerLevel();
+        int winner = 0;
+
+        // by default we set the winner to be character a, for defeated we set it to B.
+        var _winningDancer = teamADancer;
+        var _defeatedDancer = teamBDancer;
 
 
         // Tells each dancer that they are selcted and sets the animation to dance.
-        SetUpAttack(teamACharacter);
-        SetUpAttack(teamBCharacter);
+        SetUpAttack(teamADancer);
+        SetUpAttack(teamBDancer);
 
         // Tells the system to wait X number of seconds until the fight to begins.
         yield return new WaitForSeconds(fightAnimTime);
 
-        // We need to do some logic hear to check who wins based on the battle points, we want to handle team A winning, team B winning and draw scenarios.
 
-        // by default we set the winner to be character a, for defeated we set it to B.
-        winner = teamACharacter;
-        defeated = teamBCharacter;
-        outcome = 0;// this really needs to be a fraction of the win vs the loser, but if it's a draw 0 is okay.
-        BattleLog.Log("Fight is a draw!", drawCol);
 
-        Debug.LogWarning("Attack called, may want to use the BattleLog.Log() to report the dancers and the outcome of their dance off.");
+        if (teamADancerPowerLevel == teamBDancerPowerLevel)
+            winner = 0;
+        else if (teamADancerPowerLevel > teamBDancerPowerLevel)
+            winner = 1;
+        else
+            if (teamADancerPowerLevel < teamBDancerPowerLevel)
+                winner = -1;
+        
+
+        int baseExperience = teamADancer.experienceBase;
+        int loserExperience = (int)(baseExperience / lossRatio);
+        int currentTeamADancerLevel = teamADancer.level;
+        int currentTeamBDancerLevel = teamBDancer.level;
+
+        switch (winner)
+        {
+            case 0:
+                // If there was a draw we can assign base experience to both 
+                // add the other dancers experience 
+
+                int teamADancerXP = baseExperience + (currentTeamADancerLevel * 2);
+                int teamBDancerXP = baseExperience + (currentTeamBDancerLevel * 2);
+
+
+                teamADancer.AddXP(teamADancerXP);
+                teamBDancer.AddXP(teamBDancerXP);
+                break;
+            case 1:
+                // Team A won
+                baseExperience = baseExperience + (int)(currentTeamADancerLevel * Random.Range(1f, 2.5f));
+
+                _winningDancer = teamADancer;
+                _defeatedDancer = teamBDancer;
+
+                teamADancer.AddXP(baseExperience);
+                teamBDancer.AddXP(loserExperience);
+                break;
+            case -1:
+                // Team B won
+                baseExperience = baseExperience + (int)(currentTeamBDancerLevel * Random.Range(1f, 2.5f));
+
+                _winningDancer = teamBDancer;
+                _defeatedDancer = teamADancer;
+
+                teamADancer.AddXP(loserExperience);
+                teamBDancer.AddXP(baseExperience);
+                break;
+            default:
+                Debug.LogWarning("Error in FightManager (Switch Statement)");
+                break;
+        }
+
+        float outcome = 0f;
+       
+        if (winner == 0f)
+            outcome = 0;
+        else if (winner == 1)
+            outcome = (float)(winner * 100f);
+        else
+            if (winner == -1)
+            outcome = (float)(winner * -100f);
+
+
+
+        Debug.Log("Winning Outcome Percentage: " + outcome);
+
+        if (outcome <= 0f)
+            BattleLog.Log("Fight resulted in a draw!", drawCol);
 
         // Pass on the winner/loser and the outcome to our fight completed function.
-        FightCompleted(winner, defeated, outcome);
+        FightCompleted(_winningDancer, _defeatedDancer, outcome);
         yield return null;
     }
 

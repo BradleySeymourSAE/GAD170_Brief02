@@ -59,7 +59,10 @@ public class Character : MonoBehaviour
     /// A float used to display what the chance of winning the current fight is.
     /// </summary>
     public float percentageChanceToWin;
-    public float currentHealth;
+    
+    [Header(styled + " Debugging - Player Health " + styled)]
+    [SerializeField]
+    private float currentHealth;
 
 
     [Header(styled + " Character Settings (Other) " + styled)]
@@ -117,14 +120,12 @@ public class Character : MonoBehaviour
         float _rhythm = _strength * strengthMultiplier;
         float _luck = _intelligence * Random.Range(0.0f, intelligenceMultiplier);
 
-
-        style = (int)_style;
-        rhythm = (int)_rhythm;
-        luck = (int)_luck;
+        style = (int)(_agility * agilityMultiplier);
+        rhythm = (int)(_strength * strengthMultiplier);
+        luck = (int)(_intelligence * Random.Range(0f, intelligenceMultiplier));
 
         // Debugging : Return the Data Type (Float, Int) 
         // Debug.Log("Style is type: " + style.GetType() + " Rhythm is type: " + rhythm.GetType() + " Luck's Type: " + luck.GetType());
-    
     }
 
 
@@ -148,18 +149,26 @@ public class Character : MonoBehaviour
     /// </summary>
     public void DealDamage(float amount)
     {
+        // Set a local variable to check whether the player has already lost all his HP
         float _currentHealth = mojoRemaining;
-
+        
+        // Deduct the amount
         _currentHealth -= amount;
 
-        if (_currentHealth <= 0f)
-		{
+        // Check if the current health is less than or equal to 0.0f, and remove the dance from the active
+        // list if they are 'dead'
+        if (_currentHealth <= 0.0f)
             myTeam.RemoveDancerFromActive(this);
-		}
         else
-		{
             mojoRemaining = _currentHealth;
-		}
+       
+        // Otherwise the mojoRemaining is equal to the current health.
+        // We can also set the current health variable to check in the inspector aswell.
+        if (_currentHealth != null)
+            currentHealth = _currentHealth;
+        else
+            currentHealth = mojoRemaining;
+        		
 
         Debug.Log("Current Health:  " + _currentHealth + " MOJO Remaining: " + mojoRemaining);
     }
