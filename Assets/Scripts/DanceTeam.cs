@@ -41,7 +41,7 @@ public class DanceTeam : MonoBehaviour
     /// <param name="dancer"></param>
     public void RemoveDancerFromActive(Character dancer)
     {
-        Debug.LogWarning("RemoveFromActive called, it needs to take the dancer out of the active dancers list");  
+        // Debug.LogWarning("RemoveFromActive called, it needs to take the dancer out of the active dancers list");  
         // This gets called when our team mate dies :(
         // We probably want to remove the dancer passed in from our active dancer list.
 
@@ -112,4 +112,10 @@ public class DanceTeam : MonoBehaviour
             fightWinContainer.SetActive(false);
         }
     }
+
+
+
+    ///<summary>
+    ///     Resets the characters Health 
+    /// </summary>
 }

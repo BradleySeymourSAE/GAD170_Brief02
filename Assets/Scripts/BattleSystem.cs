@@ -13,10 +13,13 @@ using Random = UnityEngine.Random;
 /// </summary>
 public class BattleSystem : MonoBehaviour
 {
-    public DanceTeam teamA,teamB; //References to TeamA and TeamB
+    private const string styled = "---";
+    [Header(styled + " Manager Settings " + styled)]
     public FightManager fightManager; // References to our FightManager.
     public AudioSource PlayerDeath;
+    public DanceTeam teamA,teamB; //References to TeamA and TeamB
 
+    [Header(styled + " Timers " + styled)]
     public float battlePrepTime = 2;  // the amount of time we need to wait before a battle starts
     public float fightCompletedWaitTime = 2; // the amount of time we need to wait till a fight/round is completed.
     
@@ -24,9 +27,13 @@ public class BattleSystem : MonoBehaviour
     [Range(0.5f, 3.0f)]
     public float loserExperienceRatio = 1.5f;
     
-    public float randomDamageMinimum = 5.0f;
-    public float randomDamageMaximum = 100.0f;
+    [Header(styled + " Damage Range " + styled)]
+    public float randomDamageMinimum = 5f;
+    public float randomDamageMaximum = 100f;
 
+    [Header(styled + " Health Range " + styled)]
+    public float minimumHealthMultiplier = 0.25f;
+    public float maximumHealthMultiplier = 0.45f;
     /// <summary>
     /// This occurs every round or every X number of seconds, is the core battle logic/game loop.
     /// </summary>
@@ -64,22 +71,24 @@ public class BattleSystem : MonoBehaviour
             // We have a winner - team thats won
             DanceTeam winner = null; // null is the same as saying nothing...often seen as a null reference in your logs.
 
-            if (teamA.activeDancers.Count <= 0 && teamB.activeDancers.Count > 0)
+            if (teamA.activeDancers.Count <= 0)
                 winner = teamB;
             else
-                if (teamB.activeDancers.Count <= 0 && teamA.activeDancers.Count > 0)
+            {
+                if (teamB.activeDancers.Count <= 0)
                 winner = teamA;
+            }
 
 
-            Debug.Log("We have a winner: " + winner.danceTeamName);
-            // determine a winner
-            // look at the previous if statements. 
-          
-
-            // Enables win fx, logs it to the console.
-            winner.EnableWinEffects();
-            BattleLog.Log(winner.danceTeamName.ToString(), winner.teamColor);
-            // Debug.Log("DoRound called, but we have a winner so Game Over");
+            // Check to see whether we have a Dance Team that has won!
+            if (winner != null)
+			{
+                // Log to the console 
+                // Enable the winning particle effects 
+                Debug.Log("Winning Team: " + winner.danceTeamName); 
+                winner.EnableWinEffects();
+                BattleLog.Log(winner.danceTeamName.ToString(), winner.teamColor); 
+            }
         }
     }
 
@@ -88,7 +97,7 @@ public class BattleSystem : MonoBehaviour
     {
        // Debug.LogWarning("FightOver called, may need to check for winners and/or notify teams of zero mojo dancers");   
 
-        if (outcome == 0.0f)
+        if (outcome == 0f)
 		{
             // Then a draw actually occured -> Do nothing!
             Debug.LogWarning("There was a draw " + outcome);
@@ -110,22 +119,42 @@ public class BattleSystem : MonoBehaviour
             winner.AddXP(winnerXP);
             defeated.AddXP(loserXP);
 
-            // Assign damage to the defeated character 
-            float damage = Random.Range(randomDamageMinimum, randomDamageMaximum);
+            // Get a random damage value within the set minimum and maximum range 
+            float damageValue = Mathf.Round(Random.Range(randomDamageMinimum, randomDamageMaximum));
+           
+            //  Debug.LogWarning(defeated.character_name + " got random damage value " + damageValue);
+            // Divide the value by 100f to get our normalized value (0-100f) -> (0.0, 1.0f)
+            float damage = damageValue / 100f;
+            Debug.Log("Assigning normalized damage value: " + damage);
 
-            Debug.Log("Dealing damage " + damage + " to player " + defeated.character_name + " from " + winner.character_name);
-            bool isDefeated = defeated.DealDamage(damage);
+            // Assign damage to the defeated character 
+
+            Debug.Log(winner.character_name + " dealt damage " + damage + " to player " + defeated.character_name);
+
+            // Deal damage to the defeated player and check if they are dead 
+            bool isDefeated = defeated.DealDamage(damage) == true;
 
 
             if (isDefeated)
 			{
                 Debug.Log("Winner: " + winner.character_name + " SLAYED " + defeated.character_name);
+
+                // If the winner defeats the other character (As in the other character 'died') then we want to 
+                // add health to the winner
+               
+                float randomHealth = Random.Range(minimumHealthMultiplier, maximumHealthMultiplier);
+
+                Debug.LogWarning("Adding Health " + randomHealth + " to character " + winner.character_name);
+
+                winner.AddHealth(randomHealth);
+
                 PlayerDeath.Play();
 			}
             else
-                Debug.LogWarning("Winner of this round " + winner.character_name + " with HP " + winner.mojoRemaining + " hasnt yet killed " + defeated.character_name + " with HP " + defeated.mojoRemaining);
-            // Check mojo of the defeated dancer is not equal to 0 
-        }
+            { 
+                Debug.LogWarning(winner.character_name + " has " + winner.mojoRemaining + " health remaining. " + defeated.character_name + " has " + defeated.mojoRemaining + " health remaining.");
+            }
+           }
 
 
 
@@ -154,19 +183,31 @@ public class BattleSystem : MonoBehaviour
         teamA.DisableWinEffects();
         teamB.DisableWinEffects();
 
+        bool fightIsOver = false;
 
-        Debug.Log("Team A Active List Count: " + teamA.activeDancers.Count);
+        int teamACurrentActiveCount = teamA.activeDancers.Count;
+        int teamBCurrentActiveCount = teamB.activeDancers.Count;
 
-        Debug.Log("Team B Active List Count: " + teamB.activeDancers.Count);
+        // Simple check to determine whether the fight is over or not 
+        if (teamACurrentActiveCount <= 0 || teamBCurrentActiveCount <= 0)
+            fightIsOver = true;
+        
+        // Debugging purposes to find the count of players on each side 
+        // Debug.Log("Team A Active Count: " + teamACurrentActiveCount + " Team B Active Count: " + teamBCurrentActiveCount);
 
-        if (teamA.activeDancers.Count <= 0)
+        if (fightIsOver)
+		{
+            Debug.Log("Battle is over! Clearing active dancers list!");
             teamA.activeDancers.Clear();
-
-        if (teamB.activeDancers.Count <= 0)
             teamB.activeDancers.Clear();
+		}
+       
+        if ((teamACurrentActiveCount <= 0 || teamBCurrentActiveCount <= 0) && fightIsOver == false)
+		{
+            Debug.LogWarning("HandleFightOver called, may need to prepare or clean dancers or teams and checks before doing GameEvents.RequestFighters()");
+        }
 
-     
-        Debug.LogWarning("HandleFightOver called, may need to prepare or clean dancers or teams and checks before doing GameEvents.RequestFighters()");
+
         RequestRound();
     }
 }

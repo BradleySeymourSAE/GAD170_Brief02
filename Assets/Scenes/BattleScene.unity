@@ -1091,10 +1091,12 @@ MonoBehaviour:
   teamA: {fileID: 1389777076}
   teamB: {fileID: 1223316129}
   fightManager: {fileID: 746942181}
+  PlayerDeath: {fileID: 1282202782}
+  cleanUpBattleTimeout: 3.5
   battlePrepTime: 1
   fightCompletedWaitTime: 2
   loserExperienceRatio: 1.5
-  randomDamageMinimum: 90
+  randomDamageMinimum: 10
   randomDamageMaximum: 100
 --- !u!4 &746942179
 Transform:

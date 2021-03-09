@@ -18,7 +18,7 @@ public class Character : MonoBehaviour
     public string character_name;
 
     [Range(0.0f, 1.0f)]
-    public float mojoRemaining = 1; // This is the characters hp this is a float 0-100 but is normalised to 0.0 - 1.0;
+    public float mojoRemaining = 1; // This is the dancers hp float 0-100 but is normalised to 0.0 - 1.0;
 
     [Header(styled + " Character Stats " + styled)]
     public int level;
@@ -151,33 +151,26 @@ public class Character : MonoBehaviour
     public bool DealDamage(float amount)
     {
 
-        Debug.Log("Damage Amount: " + amount);
-        // Set a local variable to check whether the player has already lost all his HP
-
-        float _currentHealth = (int)(amount / 100f);
-
-        Debug.Log("_currentHealth" + _currentHealth);
-
-
-        mojoRemaining -= _currentHealth;
-       
-        Debug.Log("mojoRemaining: " + mojoRemaining);
+            mojoRemaining -= amount;
+      
 
 
 
         // Check if the current health is less than or equal to 0.0f, and remove the dance from the active
         // list if they are 'dead'
-        if (mojoRemaining <= 0.0f)
+        if (mojoRemaining <= 0)
         { 
-            Debug.Log("Player is Dead!");
+            Debug.Log(character_name + " is dead!");
+            mojoRemaining = 0;
             
             
             myTeam.RemoveDancerFromActive(this);
             return true;
         }
-        else
+            else
         { 
-            mojoRemaining = _currentHealth;
+            // Character is still alive
+            Debug.Log(character_name + " is still alive after being dealt damage!");
             return false;
         }
     }
@@ -228,24 +221,50 @@ public class Character : MonoBehaviour
     }
 
     /// <summary>
+    /// A function used to add health to the current dancer if they have won a round 
+    /// </summary>
+    /// 
+    public void AddHealth(float health)
+	{
+        // Get the current characters health 
+        float currentHealth = mojoRemaining + health;
+
+        // Check if the health value (Once added) is greater than 1f if it is, just make the health 1f.
+        if (currentHealth >= 1f)
+            currentHealth = 1.0f;
+       
+        // Check if the current health value (Once added) is not less than or equal to 0f (Normalized) 
+        if (currentHealth <= 0f)
+        {    
+            // Otherwise we want to assign a random value between a range of the remaining health and 1f (Max) 
+            currentHealth = Random.Range(mojoRemaining, 1f);
+		}
+       
+
+        // Then we want to set the characters health. 
+        mojoRemaining = currentHealth;
+	}
+
+    /// <summary>
     /// A function used to handle actions associated with levelling up.
     /// </summary>
     private void LevelUp(int p_currentXP, int p_previousThreshold)
     {
       //  Debug.LogWarning("Level up has been called");
-        int s_currentLevel = level;
-        int maxLevel = 99;
-        int basePoints = 5;
+        int s_currentLevel = level; // the dancers current level 
+        int maxLevel = 99; // the max level allowed 
+        int basePoints = 5; // the base amount of points 
         int addIntelligence = 0;
         bool hasReachedMilestone;
 
-        Debug.Log("Current xp " + p_currentXP + " has been added. The current players xp threshold is " + xpThreshold + " Is the dancers level not greater than or equal to the max level? " + !(s_currentLevel >= maxLevel));
+        Debug.Log(character_name + " gained " + p_currentXP + ". The current dancers experience threshold is " + xpThreshold + " Can the dancer level up? " + !(s_currentLevel >= maxLevel));
         if (p_currentXP >= xpThreshold && !(s_currentLevel >= maxLevel))
             level += 1;
 
         // Simple Experience Scaling 
         float s_newThreshold = p_previousThreshold + Mathf.Pow(experienceBase * level, levelScaling);
 
+        Debug.Log(character_name + " new experience threshold is " + s_newThreshold);
         // Convert threshold back to int
         xpThreshold = (int)s_newThreshold;
 
@@ -267,7 +286,7 @@ public class Character : MonoBehaviour
                 break;
 		}
 
-        if (hasReachedMilestone)
+        if (hasReachedMilestone == true)
 		{
             if (skillPointScaling == 0)
                 addIntelligence = 1;
@@ -350,8 +369,6 @@ public class Character : MonoBehaviour
 
         CalculateDancingStats(agility, strength, intelligence);
     }
-
-
 
     /// <summary>
     /// Is called inside of our DanceTeam.cs is used to set the characters name!

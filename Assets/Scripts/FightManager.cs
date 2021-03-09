@@ -68,6 +68,23 @@ public class FightManager : MonoBehaviour
        // Let's get the dance power levels from our dancers.
         int dancerAPowerLevel = teamADancer.ReturnDancePowerLevel();
         int dancerBPowerLevel = teamBDancer.ReturnDancePowerLevel();
+
+        // Get the players current level from the character and add it to the calculation 
+        int currentDancerALevel = teamADancer.level;
+        int currentDancerBLevel = teamBDancer.level;
+
+
+        // This works for keeping it random but the dancer power level seems to be a bit too high
+        // I may try to do this a different way like dividing by a factor or using a float instead.
+
+        // TODO: Think about this? 
+        dancerAPowerLevel = Random.Range(12, (currentDancerALevel + dancerAPowerLevel) + 1);
+        dancerBPowerLevel = Random.Range(12, (currentDancerBLevel + dancerBPowerLevel) + 1);
+
+      
+
+
+
         var winner = 0;
 
         // by default we set the winner to be character a, for defeated we set it to B.
@@ -81,8 +98,6 @@ public class FightManager : MonoBehaviour
 
         // Tells the system to wait X number of seconds until the fight to begins.
         yield return new WaitForSeconds(fightAnimTime);
-
-        float outcome = 0.0f;
    
         // Get both players current level 
         Debug.Log("Dancer " + teamADancer.character_name + " power level is " + dancerAPowerLevel + ", currently fighting dancer " + teamBDancer.character_name + " with a power level of " + dancerBPowerLevel);
@@ -90,7 +105,7 @@ public class FightManager : MonoBehaviour
         if (dancerAPowerLevel > dancerBPowerLevel)
 		{
             // Dancer from Team A won 
-            Debug.LogWarning("Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")" + " WON against Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")");
+            Debug.Log("Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")" + " WON against Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")");
             winnerDancer = teamADancer;
             defeatedDancer = teamBDancer;
             winner = 1;
@@ -98,7 +113,7 @@ public class FightManager : MonoBehaviour
         else if (dancerAPowerLevel < dancerBPowerLevel)
 		{
             // Dancer from Team B Won
-            Debug.LogWarning("Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")" + " WON against Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")");
+            Debug.Log("Team B Dancer " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")" + " WON against Team A Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")");
             winner = -1;
             winnerDancer = teamBDancer;
             defeatedDancer = teamADancer;
@@ -109,24 +124,11 @@ public class FightManager : MonoBehaviour
 			{
                 // It was a draw 
                 winner = 0;
-                winnerDancer = teamADancer;
-                defeatedDancer = teamBDancer;
                 Debug.LogWarning("Dancer " + teamADancer.character_name + "(" + dancerAPowerLevel + ")" + " DRAWED with " + teamBDancer.character_name + "(" + dancerBPowerLevel + ")");
 			}
 		}
 
-        switch (winner)
-		{
-            case 0:
-                outcome = 0;
-                break;
-            case 1:
-                outcome = 100f;
-                break;
-            case -1:
-                outcome = -100f;
-                break;
-		}            
+       float outcome = winner;
 
 
 
