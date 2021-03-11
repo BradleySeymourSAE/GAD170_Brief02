@@ -13,8 +13,10 @@ using Random = UnityEngine.Random;
 /// </summary>
 public class BattleSystem : MonoBehaviour
 {
-    private const string styled = "---";
-    [Header(styled + " Manager Settings " + styled)]
+    private const string styled = "---"; // I commonly use this const to style headers.
+
+
+    [Header(styled + " Battle System Settings " + styled)]
     public FightManager fightManager; // References to our FightManager.
     public AudioSource PlayerDeath;
     public DanceTeam teamA,teamB; //References to TeamA and TeamB
@@ -23,191 +25,218 @@ public class BattleSystem : MonoBehaviour
     public float battlePrepTime = 2;  // the amount of time we need to wait before a battle starts
     public float fightCompletedWaitTime = 2; // the amount of time we need to wait till a fight/round is completed.
     
-    // Losing a round ratio 
-    [Range(0.5f, 3.0f)]
-    public float loserExperienceRatio = 1.5f;
-    
-    [Header(styled + " Damage Range " + styled)]
-    public float randomDamageMinimum = 5f;
-    public float randomDamageMaximum = 100f;
-
-    [Header(styled + " Health Range " + styled)]
-    public float minimumHealthMultiplier = 0.25f;
-    public float maximumHealthMultiplier = 0.45f;
     /// <summary>
-    /// This occurs every round or every X number of seconds, is the core battle logic/game loop.
+    ///    The ratio for how much experience is lost for the losing character.
+    /// </summary>
+    private int m_loserExperienceRatio = 35;
+    private int m_loserExperience; // The experience for the loser of a round 
+    private int m_baseExperienceGained; // The base amount of experience gained 
+    private int m_winnerDancerLevel; // The Dancer A's Level 
+    private int m_loserDancerLevel; // The Dancer B's Level
+    
+    [Header(styled + " Modifiers  " + styled)]
+    public float damageMinimum = 5f;
+    public float damageMaximum = 100f;
+
+    [Header(styled + " Health Modifiers " + styled)]
+    public float minimumHealthModifier = 0.25f; // minimum amount of health to add to a character upon winning 
+    public float maximumHealthModifier = 0.45f; // maximum amount of health to add to a character upon winning 
+    
+    [Header(styled + " Debugging " + styled)]
+    public int teamACurrentActiveCount;
+    public int teamBCurrentActiveCount;
+    
+    /// <summary>
+    /// Function occurs every round or every X number of seconds, is the core battle logic/game loop.
     /// </summary>
     /// <returns></returns>
     IEnumerator DoRound()
     {     
-        // waits for a float number of seconds....
+        // Amount of seconds to wait before the round starts 
         yield return new WaitForSeconds(battlePrepTime);
 
-        //checking for no dancers on either team
+        //Check if all dancers from both Team A or Team B have dancers in them. 
         if (teamA.allDancers.Count == 0 && teamB.allDancers.Count == 0)
         { 
-            Debug.LogWarning("DoRound called, but there are no dancers on either team. DanceTeamInit needs to be completed");
+            // If there is no dancers in either list, chances are DanceTeamInit is not filled in, or another error has occurred.
+            Debug.LogWarning("[DoRound]: " + "There doesnt seem to be any dancers on either team. Complete DanceTeamInit or check logs for errors.");
         }
+        // Otherwise if Team A active dancers count is greater than 0 and Team B active dancer's count is greater than 0 
         else if (teamA.activeDancers.Count > 0 && teamB.activeDancers.Count > 0) 
         {
-           // Debug.LogWarning("DoRound called, it needs to select a dancer from each team to dance off and put in the FightEventData below");
-                
+            // We need to select a random dancer from each team to fight 
+            Debug.Log("[DoRound]: " + "Selecting a random dancer from Dance Team A and Dance Team B to fight!");
+               
+            // Generate a random string int hash code to avoid duplicates.
             System.Random rand = new System.Random(DateTime.Now.ToString().GetHashCode());
 
-            int randomTeamAIndex = rand.Next(teamA.activeDancers.Count);
-            int randomTeamBIndex = rand.Next(teamB.activeDancers.Count);
+            int randomTeamAIndex = rand.Next(teamA.activeDancers.Count);  // Select a random index from Team A active dancers list 
+            int randomTeamBIndex = rand.Next(teamB.activeDancers.Count);  // Select a random index from Team B active dancers list 
 
-            // Get a random dancer from Team A's Active Dancer List 
-            // Get a random dancer from Team B's Active Dancer List 
-           Character teamADancer = teamA.activeDancers[randomTeamAIndex];
-           Character teamBDancer = teamB.activeDancers[randomTeamBIndex];
+            Debug.Log("[DoRound]: " + "Selecting Index " + randomTeamAIndex + " from Team A Active Dancers List, Selecting Index " + randomTeamBIndex + " from Team B Active Dancers list.");
+
+
+            Character teamADancer = teamA.activeDancers[randomTeamAIndex]; // Selected Team A Dancer 
+            Character teamBDancer = teamB.activeDancers[randomTeamBIndex]; // Selected Team B Dancer
 
          
-            // Start the fight sequence 
+            // Initiate the fight between the two dancers. 
+
+            Debug.Log("[DoRound]: " + "Calling FightManager.Fight for Dancers:  " + teamADancer.character_name + " and " + teamBDancer.character_name);
             fightManager.Fight(teamADancer, teamBDancer);
         }
          else
         {
-            // We have a winner - team thats won
-            DanceTeam winner = null; // null is the same as saying nothing...often seen as a null reference in your logs.
+            DanceTeam winnerDanceTeam; // Store a reference to the winner team.
 
-            if (teamA.activeDancers.Count <= 0)
-                winner = teamB;
-            else
+            // If we do not have any active dancers left in Team A
+            if (teamACurrentActiveCount <= 0 && teamBCurrentActiveCount > 0)
             {
-                if (teamB.activeDancers.Count <= 0)
-                winner = teamA;
+                // Winner is Team B 
+                winnerDanceTeam = teamB;
+            }
+              else if (teamBCurrentActiveCount <= 0 && teamACurrentActiveCount > 0)  // Otherwise, If we do not have any active dancers left in Team B 
+            {
+                // Winner is Team A 
+                winnerDanceTeam = teamA;
+            }
+            else
+			{
+                winnerDanceTeam = null; // Is the same as saying nothing (Often seen as a null reference in your logs)
             }
 
-
-            // Check to see whether we have a Dance Team that has won!
-            if (winner != null)
+            
+           
+            // Check to see whether DanceTeam winner is not equal to null 
+            if (winnerDanceTeam != null)
 			{
-                // Log to the console 
-                // Enable the winning particle effects 
-                Debug.Log("Winning Team: " + winner.danceTeamName); 
-                winner.EnableWinEffects();
-                BattleLog.Log(winner.danceTeamName.ToString(), winner.teamColor); 
+                // If the winner is not equal to null. 
+                Debug.Log("[DoRound]: " +  "Dance Team " + winnerDanceTeam.danceTeamName + " has won the round!"); 
+               
+                winnerDanceTeam.EnableWinEffects(); // Enable the winning team particle effects 
+                BattleLog.Log(winnerDanceTeam.danceTeamName.ToString(), winnerDanceTeam.teamColor); // Custom log the winning dance team and their color.
             }
         }
     }
 
-    // handles win / lose 
+    /// <summary>
+    ///     Handles what happens when the fight has completed
+    /// </summary>
+    /// <param name="winner">The winner Dance Character</param>
+    /// <param name="defeated">The defeated Dance Character</param>
+    /// <param name="outcome">The outcome result</param>
     public void FightOver(Character winner, Character defeated, float outcome)
     {
-       // Debug.LogWarning("FightOver called, may need to check for winners and/or notify teams of zero mojo dancers");   
+     
 
-        if (outcome == 0f)
+        // Check the outcome to determine if a draw occurred
+        if (outcome <= 0)
 		{
             // Then a draw actually occured -> Do nothing!
-            Debug.LogWarning("There was a draw " + outcome);
+            Debug.LogWarning("[FightOver]: " + "There was a Draw " + outcome);
 		}
         else
 		{
-
+            // Otherwise we do have a winner. 
 
             // Add Experience to winner & Loser 
-            int baseExperience = winner.experienceBase;
-            int loserExperience = (int)(baseExperience / loserExperienceRatio);
+             m_baseExperienceGained = winner.experienceBase; // Set the base experience for the winner 
+             m_loserExperience = m_baseExperienceGained - m_loserExperienceRatio; // The the losers experience
+             m_winnerDancerLevel = winner.level; // The winner players level 
+             m_loserDancerLevel = defeated.level; // The loser players level
 
-            int winnerDancerLevel = winner.level;
-            int loserDancerLevel = defeated.level;
+            int winnerExperience = m_baseExperienceGained + (int)(m_loserDancerLevel * winner.levelScalingFactor);
+            int loserExperience = m_loserExperience + m_winnerDancerLevel;
 
-            int winnerXP = baseExperience + (int)(loserDancerLevel * winner.levelScaling);
-            int loserXP = loserExperience + winnerDancerLevel;
 
-            winner.AddXP(winnerXP);
-            defeated.AddXP(loserXP);
+            Debug.Log("[FightOver]: " + "Adding Experience " + winnerExperience + " for Winner Dancer: " + winner.character_name + ", Adding Experience " + loserExperience + " for Defeated Dancer: " + defeated.character_name);
+            
+            winner.AddXP(winnerExperience); // Add experience for the winning dancer 
+            defeated.AddXP(loserExperience); // Add experience for the defeated dancer
 
-            // Get a random damage value within the set minimum and maximum range 
-            float damageValue = Mathf.Round(Random.Range(randomDamageMinimum, randomDamageMaximum));
+            // Local Normalized Damage variable between a minimum damage value and a maximum damage value to deal to the defeated character.
+            float damage = Mathf.Round(Random.Range(damageMinimum, damageMaximum)) / 100f;
            
-            //  Debug.LogWarning(defeated.character_name + " got random damage value " + damageValue);
-            // Divide the value by 100f to get our normalized value (0-100f) -> (0.0, 1.0f)
-            float damage = damageValue / 100f;
-            Debug.Log("Assigning normalized damage value: " + damage);
-
-            // Assign damage to the defeated character 
-
-            Debug.Log(winner.character_name + " dealt damage " + damage + " to player " + defeated.character_name);
+            Debug.Log("[FightOver]: " + "Winning dancer " + winner.character_name + " dealt damage " + damage + " to the defeated dancer " + defeated.character_name);
 
             // Deal damage to the defeated player and check if they are dead 
-            bool isDefeated = defeated.DealDamage(damage) == true;
+            bool dancerHasBeenDefeated = defeated.DealDamage(damage) == true;
 
-
-            if (isDefeated)
+            // Check to see whether the other dancer has been defeated
+            if (dancerHasBeenDefeated == true)
 			{
-                Debug.Log("Winner: " + winner.character_name + " SLAYED " + defeated.character_name);
+                // Dancer has been defeated 
+                Debug.Log("[FightOver]: " + "Dancer " + winner.character_name + " SLAYED on the D-Floor! " + defeated.character_name + " has been sent to the bench!");
+                PlayerDeath.Play(); // Play Roblox OOF Death sound for the defeated character
 
-                // If the winner defeats the other character (As in the other character 'died') then we want to 
-                // add health to the winner
-               
-                float randomHealth = Random.Range(minimumHealthMultiplier, maximumHealthMultiplier);
+                // We want to add a randomly generated health value between a minimum & maximum health modifier.
+                float randomHealth = Random.Range(minimumHealthModifier, maximumHealthModifier);
+                Debug.Log("[FightOver]: " + "Dancer " + winner.character_name + " has GAINED " + randomHealth + " for defeating " + defeated.character_name);
 
-                Debug.LogWarning("Adding Health " + randomHealth + " to character " + winner.character_name);
-
-                winner.AddHealth(randomHealth);
-
-                PlayerDeath.Play();
+                winner.AddHealth(randomHealth); // Add health to the winning character 
 			}
             else
             { 
-                Debug.LogWarning(winner.character_name + " has " + winner.mojoRemaining + " health remaining. " + defeated.character_name + " has " + defeated.mojoRemaining + " health remaining.");
+                // We just want to log how much health each character has so we can keep track 
+                Debug.LogWarning("[FightOver]: " + "Winning Dancer " + winner.character_name + " has " + winner.mojoRemaining + " health remaining. Defeated Dancer " + defeated.character_name + " has " + defeated.mojoRemaining + " health remaining!");
             }
            }
 
-
-
-
-
-        //calling the coroutine so we can put waits in for anims to play
+        // Calling the coroutine so we can add the animation wait time in
         StartCoroutine(HandleFightOver());
     }
 
     /// <summary>
-    /// Used to Request A round.
+    /// Used to Request a round.
     /// </summary>
     public void RequestRound()
     {
-        //calling the coroutine so we can put waits in for anims to play
+        // Calls the Coroutine so we can add a wait time for the animations to play.
         StartCoroutine(DoRound());
     }
 
     /// <summary>
-    /// Handles the end of a fight and waits to start the next round.
+    /// Handles what happens at the end of a fight 
     /// </summary>
     /// <returns></returns>
     IEnumerator HandleFightOver()
     {
-        yield return new WaitForSeconds(fightCompletedWaitTime);
-        teamA.DisableWinEffects();
-        teamB.DisableWinEffects();
+        yield return new WaitForSeconds(fightCompletedWaitTime); // The amount of time to wait after a fight has completed 
+        teamA.DisableWinEffects(); // Disable the winning effects for Team A 
+        teamB.DisableWinEffects(); // Disable the winning effects for Team B 
+        teamACurrentActiveCount = teamA.activeDancers.Count; // The current active dancers for Team A 
+        teamBCurrentActiveCount = teamB.activeDancers.Count; // The current active dancers for Team B 
+        bool danceFightIsOver = false; // Local variable to store whether a fight is over. 
 
-        bool fightIsOver = false;
-
-        int teamACurrentActiveCount = teamA.activeDancers.Count;
-        int teamBCurrentActiveCount = teamB.activeDancers.Count;
-
-        // Simple check to determine whether the fight is over or not 
+        Debug.Log("[HandleFightOver]: " + "Team A Current Active Count: " + teamACurrentActiveCount + " Team B Current Active Count: " + teamBCurrentActiveCount);
+        // Check if either Team A or Team B Current Active Count is less than or equal to zero 
         if (teamACurrentActiveCount <= 0 || teamBCurrentActiveCount <= 0)
-            fightIsOver = true;
-        
-        // Debugging purposes to find the count of players on each side 
-        // Debug.Log("Team A Active Count: " + teamACurrentActiveCount + " Team B Active Count: " + teamBCurrentActiveCount);
-
-        if (fightIsOver)
-		{
-            Debug.Log("Battle is over! Clearing active dancers list!");
-            teamA.activeDancers.Clear();
-            teamB.activeDancers.Clear();
-		}
-       
-        if ((teamACurrentActiveCount <= 0 || teamBCurrentActiveCount <= 0) && fightIsOver == false)
-		{
-            Debug.LogWarning("HandleFightOver called, may need to prepare or clean dancers or teams and checks before doing GameEvents.RequestFighters()");
+        {
+            // The dance fight is over and a team has won. 
+            danceFightIsOver = true;
         }
 
 
+       
+        // If the dance fight is over 
+        if (danceFightIsOver == true)
+		{
+            // Clear the active dancers list from both dance teams 
+            Debug.Log("[HandleFightOver]: " + "The Dance Battle is over! Clearing the Active Dancers list from both Dance Teams!");
+            teamA.activeDancers.Clear(); // Clear Team A Active Dancers List. 
+            teamB.activeDancers.Clear(); // Clear Team B Active Dancers List.
+		}
+        else
+		{
+            // Otherwise if either team current active count is less than or equal to zero and the dance fight ISNT over 
+            if ((teamACurrentActiveCount <= 0 || teamBCurrentActiveCount <= 0) && danceFightIsOver == false)
+			{
+                // An error could have occured, and we would want to log a warning to the console.
+                Debug.LogWarning("[HandleFightOver]: " + "HandleFightOver has been called - However we may need to prepare or clean dancers or teams. We should also do checks before doing GameEvents.RequestFighters()");
+			}
+		}
+  
+        // Request a new round 
         RequestRound();
     }
 }

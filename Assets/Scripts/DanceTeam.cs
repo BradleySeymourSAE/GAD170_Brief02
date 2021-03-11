@@ -15,6 +15,7 @@ public class DanceTeam : MonoBehaviour
     public Color teamColor = Color.white; // Our team colours, we can change these in the inspectors.
     [SerializeField]
     public string danceTeamName; // this is set from our SetTroupeName Function.
+    public int danceTeamID;
     public Transform lineUpStart; // this is just a transform in our scene where we set the spawn position of our team.
     public GameObject fightWinContainer; // This is just a point light in our scene that gets turned on and off if we win just to make it look fancy.
     public Text troupeNameText; // this is just a text element in the scene that set by the troupe name function.
@@ -39,6 +40,20 @@ public class DanceTeam : MonoBehaviour
     /// Removes a dancer to our dance team.
     /// </summary>
     /// <param name="dancer"></param>
+    /// 
+
+    /// <summary>
+    ///  Sets the Dance Team's ID 
+    /// </summary>
+    
+    public void SetDanceTeamID(int p_danceTeamId)
+	{
+        if (danceTeamID == 0)
+		{
+            danceTeamID = p_danceTeamId;
+		}
+	}
+
     public void RemoveDancerFromActive(Character dancer)
     {
         // Debug.LogWarning("RemoveFromActive called, it needs to take the dancer out of the active dancers list");  

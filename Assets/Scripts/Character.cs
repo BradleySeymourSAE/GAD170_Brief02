@@ -4,10 +4,14 @@ using UnityEngine;
 
 
 /// <summary>
-/// Functions to complete:
-/// - Initial Stats
-/// - Return Battle Points
-/// - Deal Damage
+/// This class handles all the data relating to the characters stats 
+/// - Generate Physical Stats for our character 
+/// - Calculate the dancing stats based on our physical stats 
+/// - SetPercentageValue based on the decimal value coming in -> Normalize into a % 
+/// - ReturnDancePowerLevel return a power level based on our dancing stats
+/// - AddXP based on the experience coming in, add some xp points. 
+/// - LevelUp increase our level as well as increase the threshold for levelling up.
+/// - DistributePhysicalStatsOnLevelUp increase each of our physical stats by a value, and recalculate the characters dancing stats
 /// </summary>
 public class Character : MonoBehaviour
 {
@@ -20,21 +24,29 @@ public class Character : MonoBehaviour
     [Range(0.0f, 1.0f)]
     public float mojoRemaining = 1; // This is the dancers hp float 0-100 but is normalised to 0.0 - 1.0;
 
-    [Header(styled + " Character Stats " + styled)]
+    [Header(styled + " Character Levelling Stats " + styled)]
     public int level;
     public int currentXp;
     public int xpThreshold = 10;
-    public int skillPointScaling = 1;
-
-    int previousThreshold;
+    public int maxLevel = 99;
     public int experienceBase = 50;
-    public float levelScaling = 1.2f;
+    public bool hasReachedMilestone = false;
+    public int previousThreshold; 
+
+    [Header(styled + " Scaling Factors " + styled)]
+    public int skillPointScaling = 1;
+    public int luckScalingFactor = 1;
+    public float levelScalingFactor = 1.2f;
+    public int baseSkillPoints = 5;
+    public float addHealthMinimum = 0.25f;
+    public float addHealthMaximum = 1.0f;
 
 
     /// <summary>
     /// Our variables used to determine our fighting power.
     /// Dance Stats (Calculated from Character Attrs)
     /// </summary>
+    [Header(styled + " Dancing Stats " + styled)]
     public int style;
     public int luck;
     public int rhythm;
@@ -43,6 +55,7 @@ public class Character : MonoBehaviour
     /// Our physical stats that determine our dancing stats.
     /// Character Attributes 
     /// </summary>
+    [Header(styled + " Basic Character Stats " + styled)]
     public int agility = 2;
     public int intelligence = 1;
     public int strength = 2;
@@ -51,6 +64,7 @@ public class Character : MonoBehaviour
     /// Used to determine the conversion of 1 physical stat, to 1 dancing stat.
     /// Modifiers 
     /// </summary>
+    [Header(styled + " Modifiers " + styled)]
     public float agilityMultiplier = 0.5f;
     public float strengthMultiplier = 1f;
     public float intelligenceMultiplier = 2f;
@@ -58,11 +72,10 @@ public class Character : MonoBehaviour
     /// <summary>
     /// A float used to display what the chance of winning the current fight is.
     /// </summary>
-    public float percentageChanceToWin;
-    
-    [Header(styled + " Debugging - Player Health " + styled)]
-    [SerializeField]
-    private float currentHealth;
+    public float percentageChanceToWin; // Percentage chance of winning a round 
+    public int numberOfAttributes; // Total amount of attributes 
+    public int totalPowerLevelPoints; // Total amount of power level points (Debugging)
+
 
 
     [Header(styled + " Character Settings (Other) " + styled)]
@@ -72,12 +85,23 @@ public class Character : MonoBehaviour
     protected TMPro.TextMeshPro nickText; // This is just a piece of text in Unity,  to display the characters name.
     public AnimationController animController; // A reference to the animationController, is used to switch dancing states.
 
-    // This is called once, this then calls Initial Stats function
+    // This is called once BEFORE start, this then calls Initial Stats function
     void Awake()
     {
-        animController = GetComponent<AnimationController>();
-        GeneratePhysicalStatsStats(); // we want to generate some physical stats.
+        animController = GetComponent<AnimationController>(); // Animation Controller Reference 
+        GeneratePhysicalStatsStats(); // Generate a characters physical stats 
     }
+
+
+    private void Start()
+	{
+        // If the charactes level is less than or equal to zero 
+        if (level <= 0)
+		{
+            // Set the starting characters level to 1.
+            level = 1;
+		}
+	}
 
     /// <summary>
     /// This function should set our starting stats of Agility, Strength and Intelligence
@@ -88,45 +112,45 @@ public class Character : MonoBehaviour
         // Debug.LogWarning("Generate Physical Stats has been called");
 
         // Let's set up agility, intelligence and strength to some default Random values.
-        agility = Random.Range(1, 4);
-        strength = Random.Range(1, 4);
-        intelligence = Random.Range(1, 3);
+        agility = Random.Range(1, 4);  // random agility value between 1 minimum inclusive and 4 exclusive.
+        strength = Random.Range(1, 4);  // random strength value between 1 minimum inclusive and 4 exclusive.
+        intelligence = Random.Range(1, 3); // random intelligence value between 1 minimum inclusive and 3 exclusive.
 
+        Debug.Log("[GeneratePhysicalStatsStats]: " + " Agility: " + agility + " Strength: " + strength + " Intelligence: " + intelligence);
 
+        // Calculate the dancing stats for our character based on the characters 
+        // agility, strength and intelligence. 
         CalculateDancingStats(agility, strength, intelligence);
     }
 
     /// <summary>
-    /// This function should set our style, luck and ryhtmn to values
-    /// based on our currrent agility,intelligence and strength.
+    ///     This function should set our Style, Rhythm & Luck to values based on our currrent characters Agility, Strength and Intelligence Values.
+    /// <param name="_agility">The characters agility level</param>
+    /// <param name="_strength">The characters strength level</param>
+    /// <param name="_intelligence">The characters intelligence level</param>
+    /// <returns></returns>
     /// </summary>
     public void CalculateDancingStats(int _agility, int _strength, int _intelligence)
     {
-       //  Debug.LogWarning("Generate Calculate Dancing Stats has been called");
-        // take our physical stats and translate them into dancing stats,
-        // Style = Agility * .5f
-        // Rhythm = Strength * 1.0f 
-        // Luck = intelligence * 2.0f
-        // Convert integer value to a float so that we can modify the value
-        // Then return that value back to an integer 
+        Debug.Log("[CalculateDancingStats]: " + "Character Stats for Agility: " + _agility + " Strength: " + _strength + " Intelligence: " + _intelligence);
 
-        if (agilityMultiplier <= 0.0f) 
-            agilityMultiplier = 0.5f;
+        // Style is calculated based on the characters 'Agility' * agilityMultiplier (0.5f)
+        // Rhythm is calculated based on the characters 'Strength' * strengthMultiplier (1f)
+        // Luck is calculated based on the characters 'Intelligence' Stat * intelligenceMultiplier (2f)
 
-        if (strengthMultiplier <= 0.0f) 
-            strengthMultiplier = 1f;
 
-        if (intelligenceMultiplier <= 0.0f) 
-            intelligenceMultiplier = 2f;
-
-        // Parse the Characters Dance Attrs (Style, Dance, Rhythm) to float
-
+        // We want to multiply agility value by its multiplier and cast the value from a float to an integer. 
         style = (int)(_agility * agilityMultiplier);
         rhythm = (int)(_strength * strengthMultiplier);
         luck = (int)(_intelligence * Random.Range(0f, intelligenceMultiplier));
 
-        // Debugging : Return the Data Type (Float, Int) 
-        // Debug.Log("Style is type: " + style.GetType() + " Rhythm is type: " + rhythm.GetType() + " Luck's Type: " + luck.GetType());
+        // Extra Debugging Methods
+        // Debug.Log("[CalculateDancingStats]: " + " Style Type: " + style.GetType() + " Rhythm Type: " + rhythm.GetType() + " Luck Type: " + luck.GetType());
+
+        Debug.Log("[CalculateDancingStats]: " + "Style: " + style + " Rhythm: " + rhythm + " Luck: " + luck);
+
+        // Store global var for total power level points.
+        totalPowerLevelPoints = agility + strength + intelligence + style + rhythm;
     }
 
 
@@ -136,244 +160,319 @@ public class Character : MonoBehaviour
     /// <param name="normalisedValue"></param>
     public void SetPercentageValue(float normalisedValue)
     {
-      
-        // Convert float's normalised value into a whole number 
+        // Set Percentage to be a normalised value.
+        Debug.Log("[SetPercentageValue]: " + " Setting percentage value for " + normalisedValue);
 
+        // Round float value to the nearest whole decimal number
         normalisedValue = Mathf.Round(normalisedValue);
 
+        // Sets the percentage chance of winning for a characters Stats
         percentageChanceToWin = normalisedValue;
+
+        Debug.Log("[SetPercentageValue]: " + " Percentage: " + percentageChanceToWin + "%");
     }
 
     /// <summary>
-    /// We probably want to use this to remove some hp (mojo) from our character.....
-    /// Then we probably want to check to see if they are dead or not from that damage and return true or false.
+    /// Deals damage to our character from a float value 
+    /// Then returns a true or false value to determine whether the character is dead or not 
+    /// <param name="amount">The amount of damage to incur on the player</param>
     /// </summary>
     public bool DealDamage(float amount)
     {
 
-            mojoRemaining -= amount;
-      
+        Debug.Log("[DealDamage]: " + character_name + " is has been dealt " + amount);
+        // Deduct an amount from the current mojo remaining for the character
+        mojoRemaining -= amount;
 
 
 
-        // Check if the current health is less than or equal to 0.0f, and remove the dance from the active
+        // Check if the current health is less than or equal to 0.0f
         // list if they are 'dead'
         if (mojoRemaining <= 0)
-        { 
-            Debug.Log(character_name + " is dead!");
+        {
+            // Characer is dead
+            Debug.Log("[DealDamage]: " + character_name + " has been SLAIN! Health remaining is now " + mojoRemaining + ". Removing from active dancers list!");
+
+            // Reset the characters mojo - Good practice but not neccesarily required.
             mojoRemaining = 0;
             
-            
+            // Remove dancer from active dancer list.
             myTeam.RemoveDancerFromActive(this);
             return true;
         }
             else
-        { 
+        {
             // Character is still alive
-            Debug.Log(character_name + " is still alive after being dealt damage!");
+            Debug.Log("[DealDamage]: " + character_name + " has been hit with " + amount + " but is still standing! Health remaining: " + mojoRemaining);
             return false;
         }
     }
 
     /// <summary>
-    /// Used to generate a number of battle points that is used in combat.
+    ///  Used to return a characters dance power level, which is used in combat! 
     /// </summary>
     /// <returns></returns>
     public int ReturnDancePowerLevel()
     {
-        int _luckiness = Random.Range(1, luck + 1);
-        int totalAttributes = 6;
-        int s_currentLevel = level;
-        int basePoints = agility + strength + intelligence + rhythm + style;
+        // Create a characters dance power level based off the characters overall stats & level.
 
-        int powerLevel = s_currentLevel + (basePoints + totalAttributes) * _luckiness;
+        // Luckiness is the modifier in this case that balances the fight between characters
+        // Calculated using a range of 1 and luck + adjustable luck scaling factor 
+        int _luckiness = Random.Range(1, luck + luckScalingFactor);
+    
+        numberOfAttributes = 5;// Total number of character attributes (Which is 5 if you dont count luck)
+        totalPowerLevelPoints = agility + strength + intelligence + rhythm + style; // Example Base Points: 4 + 5 + 8 + 5 + 2 + 16
 
+        // Debugging - Debug.Log("Power Level: " + powerLevel);
+        // int powerLevel = level + (totalPowerLevelPoints + numberOfAttributes) * luckiness;
 
-        if (powerLevel != 0)
-            return powerLevel;
-        else
-		{
-            Debug.LogWarning("Return Battle Points has been called and the power level returned was equal to zero.");
-            powerLevel = 0;
-            return powerLevel;
-		}
+        // Debug log power level to the console.
+        Debug.Log("[ReturnDancePowerLevel]: " + " Power Level: " + level + (totalPowerLevelPoints + numberOfAttributes) * _luckiness);
+
+       // Return the current characters level + (totalPowerLevelPoints + attributesTotal) * luckiness;
+        return level + (totalPowerLevelPoints + numberOfAttributes) * _luckiness;
     }
 
     /// <summary>
     /// A function called when the battle is completed and some xp is to be awarded.
-    /// The amount of xp gained is coming into this function
+    /// <param name="exp">The amount of experience to be awarded</param>
     /// </summary>
     public void AddXP(int exp)
     {
         if (exp == 0)
-            Debug.LogWarning("This character needs some xp to be given, the xpGained from the fight was: " + exp);
+        {
+            Debug.LogWarning("[AddXP]: " + "This character needs some experience added. Experience added is currently " + exp);
+        }
 
-        // Check to see if the player has leveled up
+        // Add experience to the current players XP.
         currentXp += exp;
 
+        // Check if the characters current experience has reached the threshold required to level up.
         if (currentXp >= xpThreshold)
         {
-            // Level up!
-            // Store last xp threshold in a local variable 
-            previousThreshold = xpThreshold;
-            LevelUp(currentXp, previousThreshold);
+            previousThreshold = xpThreshold; // Store the previous experience threshold for the character.
+            LevelUp(currentXp, previousThreshold); // Level up the player using the experience gained.
         }
     }
 
     /// <summary>
     /// A function used to add health to the current dancer if they have won a round 
+    /// <param name="health">The amount of health to add to the dancer</param>
     /// </summary>
     /// 
     public void AddHealth(float health)
 	{
         // Get the current characters health 
-        float currentHealth = mojoRemaining + health;
+        float s_currentHealth = mojoRemaining += health;
+
+        Debug.Log("[AddHealth]: " + character_name + " new health added to the characters remaining health is " + s_currentHealth);
 
         // Check if the health value (Once added) is greater than 1f if it is, just make the health 1f.
-        if (currentHealth >= 1f)
-            currentHealth = 1.0f;
-       
-        // Check if the current health value (Once added) is not less than or equal to 0f (Normalized) 
-        if (currentHealth <= 0f)
-        {    
-            // Otherwise we want to assign a random value between a range of the remaining health and 1f (Max) 
-            currentHealth = Random.Range(mojoRemaining, 1f);
+        if (s_currentHealth > 1f)
+        {
+            s_currentHealth = 1.0f;
+        }
+        else
+		{
+            // Otherwise if the current health value is calculated to be less than or equal to 0f 
+            if (s_currentHealth <= 0f)
+			{
+                // Set a random value to be added to the characters health.
+                s_currentHealth = Random.Range(addHealthMinimum, addHealthMaximum);
+            }
 		}
-       
 
+        mojoRemaining = s_currentHealth;
+     
+      
+        Debug.Log("[AddHealth]: " + "Adding " + health + " to " + character_name + " current health " + mojoRemaining);
         // Then we want to set the characters health. 
-        mojoRemaining = currentHealth;
+        mojoRemaining = s_currentHealth;
+
+        Debug.Log("[AddHealth]: " + character_name + " new health is " + mojoRemaining);
 	}
 
     /// <summary>
-    /// A function used to handle actions associated with levelling up.
+    ///     Handle the leveling up logic for a character
     /// </summary>
+    /// <param name="p_currentXP">Current experience of the character</param>
+    /// <param name="p_previousThreshold">Previous level up threshold</param>
     private void LevelUp(int p_currentXP, int p_previousThreshold)
     {
-      //  Debug.LogWarning("Level up has been called");
-        int s_currentLevel = level; // the dancers current level 
-        int maxLevel = 99; // the max level allowed 
-        int basePoints = 5; // the base amount of points 
-        int addIntelligence = 0;
-        bool hasReachedMilestone;
+        Debug.LogWarning("[LevelUp]" + "Level up character function has been called with Experience Points: " + p_currentXP + " and previous threshold of " + p_previousThreshold);
+        int currentLevel = level; // Current dancers level 
+        int levelCap = maxLevel; // the max level allowed 
+        baseSkillPoints = 5; // base amount of points to award 
+        int intelligencePoint = 0;
 
-        Debug.Log(character_name + " gained " + p_currentXP + ". The current dancers experience threshold is " + xpThreshold + " Can the dancer level up? " + !(s_currentLevel >= maxLevel));
-        if (p_currentXP >= xpThreshold && !(s_currentLevel >= maxLevel))
-            level += 1;
 
-        // Simple Experience Scaling 
-        float s_newThreshold = p_previousThreshold + Mathf.Pow(experienceBase * level, levelScaling);
 
-        Debug.Log(character_name + " new experience threshold is " + s_newThreshold);
-        // Convert threshold back to int
-        xpThreshold = (int)s_newThreshold;
-
-        // Determin the amount of points to assign to the characters stats 
-        // Don't add points to the intelligence value, as this increases the luck and makes the game fairly unbalanced.
-        // Use milestones 
-
-        switch (level)
+        // Check to see whether the players current experience is greater than or equal to the previous threshold.
+        // If the current level of the character is not greater than or equal to the max level 
+        if (p_currentXP >= xpThreshold && !(currentLevel >= levelCap))
 		{
-            case 10:
-            case 25:
-            case 50:
-            case 75:
-            case 99:
-                hasReachedMilestone = true;
-                break;
-            default:
-                hasReachedMilestone = false;
-                break;
+            // Increase the characters level 
+            level += 1;
 		}
 
+        // Simple Experience Scaling - Increase the threshold for when the character should level up based on: 
+        // the previous threshold & power function. 
+        xpThreshold = (int)(p_previousThreshold + Mathf.Pow(experienceBase * level, levelScalingFactor));
+        Debug.Log("[LevelUp]: " + character_name + " new experience threshold is " + xpThreshold);
+
+        // Determine the amount of points to assign to the characters stats 
+        // Don't assign points to the intelligence value, as this increases the luck and makes the game unbalanced.
+        // Edit: Moved based points to top of script. 
+
+        // Check to see whether the player has reached a milestone 
+
+
+        if (
+           level % 10 == 0 ||
+           level % 25 == 0 ||
+           level % 50 == 0 ||
+           level % 75 == 0 ||
+           level % 99 == 0
+          )
+        {
+            // Has reached a level milestone 
+            hasReachedMilestone = true;
+		}
+        else
+		{
+            // Has not reached a level milestone 
+            hasReachedMilestone = false;
+		}
+
+        // Debuging - Check for milestone 
+        Debug.Log("[LevelUp]: " + "Has character reached milestone: " + hasReachedMilestone);
+
+    
+        for (int i = 1; i <= level; i++)
+		{
+            // Check if the value is equal to 10, 25, 50, 75, 99
+            if (level % i == 10 || level % i == 25 || level % i == 50 || level % i == 75 || level % i == 99)
+            {
+                // If it is,  add an intelligence point 
+                intelligencePoint += 1;
+            }
+        }
+
+
+        Debug.Log("[LevelUp]: " + "Checking for milestone... " + (intelligencePoint == 0 ? "Milestone Achieved: " + intelligencePoint : "Milestone not achieved." + intelligencePoint));
+
+
+        // IF the character has reached a milestone 
         if (hasReachedMilestone == true)
 		{
-            if (skillPointScaling == 0)
-                addIntelligence = 1;
-            else
-                addIntelligence += skillPointScaling;
+           // Add scaling factor to intelligence point 
+           intelligencePoint += skillPointScaling;
 		}
 
-        DistributePhysicalStatsOnLevelUp(basePoints, addIntelligence);
+        // Update the characters physical stats. Add intelligence points & reachedMilestone value to be handled by stats on level up.
+        DistributePhysicalStatsOnLevelUp(baseSkillPoints, intelligencePoint);
     }
 
     /// <summary>
     /// A function used to assign a random amount of points ot each of our skills.
+    /// <param name="statPoints">Default amount of points to distribute to the characters skills</param>
+    /// <param name="p_intelligencePoints">Increase intelligence value by this value. </param>
     /// </summary>
-    public void DistributePhysicalStatsOnLevelUp(int statPoints, int addIntelligencePoint)
+    public void DistributePhysicalStatsOnLevelUp(int p_PointsPool, int p_intelligencePoints)
     {
-       // Debug.LogWarning("DistributePhysicalStatsOnLevelUp has been called " + statPoints);
-       
-        int s_currentLevel = level;
-        int remainder;
-        int _strengthPoints, _agilityPoints;
+        Debug.LogWarning("[DistributePhysicalStatsOnLevelUp]: " + " Points: " + p_PointsPool + " Increase Intelligence: " + p_intelligencePoints);
+        // We need the current player's level
+        int newStrength, // local var for storing new strength points 
+            newAgility; // local var for storing new agility points
+
+        if (p_intelligencePoints >= 1 && hasReachedMilestone == true)
+        {
+            // Add the intelligence point(s) to the current character
+            intelligence += p_intelligencePoints;
+
+            // We want to reset has reached milestone value after we have done this otherwise this will
+            // be called every level up.
+        }
 
 
-        if (addIntelligencePoint == 1)
-            intelligence += addIntelligencePoint;
-
+        // Check to see whether the characters agility is greater than strength 
         if (agility > strength)
-		{
-            _strengthPoints = Random.Range(1, (statPoints - 2));
-            remainder = statPoints - _strengthPoints;
-            strength += _strengthPoints;
-            agility += remainder;
-		}
+        {
+            Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + " Agility " + agility + " is greater than Strength " + strength);
+            // Random integer value calculated for strength local var 
+            newStrength = Random.Range(1, p_PointsPool);
+
+            // Remove points from the skill points pool.
+            p_PointsPool -= strength;
+
+            // Add points to the characters strength and agility. 
+            strength += newStrength;
+            agility += p_PointsPool;
+        }
+        // Otherwise if the characters strength skill is greater than its agility skill
         else if (strength > agility)
-		{
-            _agilityPoints = Random.Range(1, (statPoints - 2));
-            remainder = statPoints - _agilityPoints;
-            agility += _agilityPoints;
-            strength += remainder;
-		}
+        {
+            Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + "Strength " + strength + " is greater than agility " + agility);
+            // Random integer value calculated for agility local var 
+            newAgility = Random.Range(1, p_PointsPool);
+
+            // Remove points from the skill points pool.
+            p_PointsPool -= newAgility;
+
+            // Add points to the characters agility, then assign the rest to the characters strength.
+            agility += newAgility;
+            strength += p_PointsPool;
+        }
         else
-		{
+        {
+            // Otherwise - If the characters strength & agility skills are the same value. 
             if (strength == agility)
-			{
-                _strengthPoints = Random.Range(1, (statPoints + 1));
-                _agilityPoints = statPoints - _strengthPoints;
-                agility += _agilityPoints;
-                strength += _strengthPoints;
-			}
-		}
+            {
+                Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + "Strength" + strength + " and Agility " + agility + " are equal!");
 
-        // Check whether the character has met a level milestone 
-        // If the player has met a milestone (Level 10, 25, 50, 75, 99)
-        // Add Two Extra Points to Intelligence Value (Which in turn gives them more luck)
+                // Random integer value calculated for agility local var 
+                newStrength = Random.Range(1, p_PointsPool + 1);
 
-        switch (s_currentLevel)
-		{
-            case 10:
-            case 25:
-            case 50:
-            case 75:
-            case 99:
+                // Remove points from the skill points pool.
+                p_PointsPool -= newStrength;
 
-                if (agility < strength)
-                    agility += 2;
-                if (strength < agility)
-                    strength += 2;
+                // Assign points randomly between both.
+                strength += newStrength;
+                agility += p_PointsPool;
+            }
+            // It would have to be one of those values, or an error would occur. Which would be handled here.
+        }
 
-                intelligence += 1;
-                break;
-            default:
-                break;
-		}
+        // Check to see if intelligence point value is greater than or equal to 1
+        // Intelligence point can be more than one as it has a scaling factor. 
+        // If a Leveling Milestone has been reached, increase the characters intelligence, agility and strength values by random.
+
+        // Check whether the character has reached a milestone 
+        if (p_intelligencePoints >= 1 && hasReachedMilestone == true)
+        {
+            // Add Agility & Strength random value between 1 inclusive, 3 exclusive. 
+            agility += Random.Range(1, 3);
+            strength += Random.Range(1, 3);
+
+            // Increase intelligence by point.
+            intelligence += 1;
+
+            Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + "Reached milestone: " + hasReachedMilestone + " Adding Agility: " + agility + " Strength: " + strength + " Intelligence: " + intelligence);
+
+            // Reset the milestone reached boolean to default value or it will be called every level up.
+            hasReachedMilestone = false;
+        }
 
 
-
-        // After calculating the characters physical stats we need to recalculate 
-        // the characters dancing stats using the updated Strength, Agility and Intelligence Values 
-
-       //  Debug.Log("Intelligence: " + intelligence + " Agility: " + agility + " Strength: " + strength);
-
+        Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + "Reached milestone: " + hasReachedMilestone);
+        // After calculating players physical stats, recalculate dancing stats again
         CalculateDancingStats(agility, strength, intelligence);
     }
 
     /// <summary>
-    /// Is called inside of our DanceTeam.cs is used to set the characters name!
+    ///     Called from DanceTeam Script - used to assign a dance characters name
     /// </summary>
-    /// <param name="characterName"></param>
+    /// <param name="characterName">The name to assign to a character</param>
     public void AssignName(CharacterName _character)
     {
         charName = _character;

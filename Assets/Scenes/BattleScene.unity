@@ -375,7 +375,7 @@ Transform:
   - {fileID: 498205926}
   - {fileID: 1282202781}
   m_Father: {fileID: 0}
-  m_RootOrder: 5
+  m_RootOrder: 6
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &498205925
 GameObject:
@@ -1088,16 +1088,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c94f465ebb361aa4bbc1b7dcd0f50c26, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  teamA: {fileID: 1389777076}
-  teamB: {fileID: 1223316129}
   fightManager: {fileID: 746942181}
   PlayerDeath: {fileID: 1282202782}
-  cleanUpBattleTimeout: 3.5
+  teamA: {fileID: 1389777076}
+  teamB: {fileID: 1223316129}
   battlePrepTime: 1
   fightCompletedWaitTime: 2
-  loserExperienceRatio: 1.5
-  randomDamageMinimum: 10
-  randomDamageMaximum: 100
+  damageMinimum: 5
+  damageMaximum: 100
+  minimumHealthModifier: 0.25
+  maximumHealthModifier: 0.45
+  teamACurrentActiveCount: 0
+  teamBCurrentActiveCount: 0
 --- !u!4 &746942179
 Transform:
   m_ObjectHideFlags: 0
@@ -1128,6 +1130,7 @@ MonoBehaviour:
   danceTeamInit: {fileID: 746942182}
   fightManager: {fileID: 746942178}
   nameGenerator: {fileID: 889553342}
+  teamNameGenerator: {fileID: 1089137421}
 --- !u!114 &746942181
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1162,7 +1165,9 @@ MonoBehaviour:
   dancerPrefab: {fileID: 4827127535268440176, guid: 7482e75549f86af4385338b6fc51acbd,
     type: 3}
   dancersPerSide: 3
+  totalDanceTeams: 2
   nameGenerator: {fileID: 889553342}
+  danceTeamNameGenerator: {fileID: 1089137421}
 --- !u!1 &758859539
 GameObject:
   m_ObjectHideFlags: 0
@@ -1711,7 +1716,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 25, y: 0, z: 0}
 --- !u!114 &1076605416
 MonoBehaviour:
@@ -1773,6 +1778,51 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
+--- !u!1 &1089137420
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1089137422}
+  - component: {fileID: 1089137421}
+  m_Layer: 0
+  m_Name: DanceTeamNameGenerator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1089137421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089137420}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eafc54e1cc415f947b9304537b4ca839, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  teamNamesList: []
+  teamDescriptorsList: []
+--- !u!4 &1089137422
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089137420}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 7.1976833, y: 3.5090392, z: -5.2210207}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 2
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1218941583
 GameObject:
   m_ObjectHideFlags: 0
@@ -2357,7 +2407,7 @@ Transform:
   m_Children:
   - {fileID: 331183476}
   m_Father: {fileID: 0}
-  m_RootOrder: 7
+  m_RootOrder: 8
   m_LocalEulerAnglesHint: {x: 0, y: -96.91, z: 0}
 --- !u!114 &1223316129
 MonoBehaviour:
@@ -2372,7 +2422,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   teamColor: {r: 0.53206897, g: 0.2300641, b: 0.8867924, a: 1}
-  danceTeamName: The Squad
+  danceTeamName: 
+  danceTeamID: 2
   lineUpStart: {fileID: 1223316128}
   fightWinContainer: {fileID: 331183475}
   troupeNameText: {fileID: 1269806573}
@@ -2664,7 +2715,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1389777074
 GameObject:
@@ -2696,7 +2747,7 @@ Transform:
   m_Children:
   - {fileID: 927278012}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 7
   m_LocalEulerAnglesHint: {x: 0, y: 97.04101, z: 0}
 --- !u!114 &1389777076
 MonoBehaviour:
@@ -2711,7 +2762,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   teamColor: {r: 0.8962264, g: 0.10568706, b: 0.2636029, a: 1}
-  danceTeamName: The Flying Seagulls
+  danceTeamName: 
+  danceTeamID: 1
   lineUpStart: {fileID: 1389777075}
   fightWinContainer: {fileID: 927278010}
   troupeNameText: {fileID: 863137606}
@@ -3486,7 +3538,7 @@ RectTransform:
   - {fileID: 863137604}
   - {fileID: 1269806571}
   m_Father: {fileID: 0}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}

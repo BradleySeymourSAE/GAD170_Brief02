@@ -15,11 +15,11 @@ public class CharacterNameGenerator : MonoBehaviour
     [Header("Possible first names")]
     public List<string> firstNames; // These appear in the inspector, you should be assigning names to these in the inspector.
     [Header("Possible last names")]
-    public List<string> lastNames;
+    public List<string> lastNames; // These appear in the inspector, you should be assigning names to these in the inspector.
     [Header("Possible nicknames")]
-    public List<string> nicknames;
+    public List<string> nicknames; // These appear in the inspector, you should be assigning names to these in the inspector.
     [Header("Possible adjectives to describe the character")]
-    public List<string> descriptors;
+    public List<string> descriptors; // These appear in the inspector, you should be assigning names to these in the inspector.
 
 
     /// <summary>
@@ -28,7 +28,9 @@ public class CharacterNameGenerator : MonoBehaviour
     /// </summary>
     public void CreateNames()
     {
-       // Debug.LogWarning("Create Names Called");
+       Debug.Log("[CharacterNameGenerator.CreateNames]: " + " Creating names a list of firstNames, lastNames, nicknames and descriptors!");
+
+       // Check to see that list isnt empty.
        if (firstNames.Count <= 0)
             firstNames = new List<string> { 
                 "Don", 
@@ -44,7 +46,8 @@ public class CharacterNameGenerator : MonoBehaviour
                 "Sergei",
                 "Lucinda"
             };
-       if (lastNames.Count <= 0)
+        // Check to see the last names list isnt empty.
+        if (lastNames.Count <= 0)
             lastNames = new List<string> {
                 "Deboo",
                 "de Weever",
@@ -60,7 +63,8 @@ public class CharacterNameGenerator : MonoBehaviour
                 "Humphrey"
             };
 
-       if (nicknames.Count <= 0)
+        // Check to see that the nicknames list isnt empty.
+        if (nicknames.Count <= 0)
             nicknames = new List<string> {
                 "The Queen of Style",
                 "The King of Dance",
@@ -75,7 +79,9 @@ public class CharacterNameGenerator : MonoBehaviour
                 "The Champion",
                 "The Gifted"
             };
-       if (descriptors.Count <= 0)
+
+        // Check to see that the descriptors list isnt empty.
+        if (descriptors.Count <= 0)
             descriptors = new List<string> {
                 "wild",
                 "religious",
@@ -101,11 +107,16 @@ public class CharacterNameGenerator : MonoBehaviour
     /// <returns></returns>
     public CharacterName[] ReturnTeamCharacterNames(int namesNeeded)
     {
-       //  Debug.LogWarning("CharacterNameGenerator called, it needs to fill out the names array with unique randomly constructed character names");
-        CharacterName[] names = new CharacterName[namesNeeded]; 
+        Debug.Log("[ReturnTeamCharacterNames]: " + "Creating " + namesNeeded + " character names!");
         
+        // Create a character names array based on the amount of names needed 
+        CharacterName[] names = new CharacterName[namesNeeded]; 
+
+
+        // For the amount of names needed, we are going to iterate through
         for (int i = 0; i < names.Length; i++)
         {
+            // Create a name based on the list of first names, last names, nicknames and descriptors.
             CharacterName _name = new CharacterName
             { 
                 firstName = firstNames[Random.Range(0, firstNames.Count)],
@@ -114,17 +125,16 @@ public class CharacterNameGenerator : MonoBehaviour
                 descriptor = descriptors[Random.Range(0, descriptors.Count)],
             };
 
-            //For every name we need to generate, we need to assign a random first name, last name, nickname and descriptor to each
+     
+            // Add the character name to the character names array 
 
-
+            // Debugging
+            // Debug.Log("[ReturnTeamCharacterNames]: " + "Adding " + _name.firstName + " to the character names array!");
             names[i] = _name;
         }
 
-        // Debugging: 
-        // foreach (CharacterName _name in names)
-        // Debug.Log(_name.firstName);
-
-        //Returns an array of names that we just created.
+       
+        // Return an array of character names that have been generated
         return names;
     }
 }

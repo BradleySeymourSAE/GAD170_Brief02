@@ -27,81 +27,76 @@ public class FightManager : MonoBehaviour
     /// <summary>
     /// Returns a float of the percentage chance to win the fight based on your characters current stats.
     /// </summary>
-    /// <param name="p_TeamADancer"></param>
-    /// <param name="p_TeamBDancer"></param>
+    /// <param name="p_TeamADancer">A dancer from Dance Team A</param>
+    /// <param name="p_TeamBDancer">A dancer from Dance Team B</param>
     /// <returns></returns>
     public float SimulateBattle(Character p_TeamADancer, Character p_TeamBDancer)
     {
-        int currentTeamADancerPoints = p_TeamADancer.ReturnDancePowerLevel(); // our current powerlevel
-        int currentTeamBDancerPoints = p_TeamBDancer.ReturnDancePowerLevel(); // our opponents current power level
+        float teamADancePoints = p_TeamADancer.ReturnDancePowerLevel(); // Team A Dancers Power Level
+        float teamBDancePoints = p_TeamBDancer.ReturnDancePowerLevel(); // Team B Dancers Power Level
+        double winningPercentage; // The percent chance the character will win the fight 
 
-        if (currentTeamADancerPoints <= 0 || currentTeamBDancerPoints <= 0)
-            Debug.LogWarning("Simulate battle called; but char 1 or char 2 battle points is 0, most likely the logic has not be setup for this yet");
+        if (teamADancePoints <= 0 || teamBDancePoints <= 0)
+        { 
+            Debug.LogWarning("[SimulateBattle]: " + "Simulate battle has been called; Dance character 1 or Dance character 2's battle points is returned a value of 0");
+        }
+
+        // If Team A Dance Power Level points are greater than Team B Dance Power Level points 
+        if (teamADancePoints > teamBDancePoints)
+        { 
+            // The winning percentage is calculated (250 / 300) * 100f;
+            winningPercentage = (double)(teamBDancePoints / teamADancePoints) * 100f;
+        }
+          else
+        {
+            // The winning percentage is calculated eg: (250 / 300) * 100f;
+            winningPercentage = (double)(teamADancePoints / teamBDancePoints) * 100f;
+        }
+
+        // We do this to avoid running into a value such as (300 / 250) * 100f; -> Which is incorrect.
         
-        // We need to cast integer values to a float
-        float _teamADancerPoints = currentTeamADancerPoints;
-        float _teamBDancerPoints = currentTeamBDancerPoints;
-        double winningPercentage;
+        Debug.Log("[SimulateBattle]: " + "Chance of winning: " + (float)Math.Round(winningPercentage, 2));
 
-        // calculate the winning percentage by setting it as a normalised (decimal) value
-
-        if (_teamADancerPoints > _teamBDancerPoints)
-            winningPercentage = (double)(_teamBDancerPoints / _teamADancerPoints) * 100f;
-        else
-            winningPercentage = (double)(_teamADancerPoints / _teamBDancerPoints) * 100f;
-
-        // We want to return a float value - as this is what the function REQUIRES to return
-
-        Debug.Log("Chance of winning: " + (float)Math.Round(winningPercentage, 2));        
-
-        // Return winning percentage float as a value for 2 decimal places 
+        // Return the chance of winning percentage as a float (rounded to 2 decimal places) 
         return (float)Math.Round(winningPercentage, 2);
     }
 
 
-    //TODO this function is all you need to modify, in this script.
-    //You just need determine who wins/loses/draws etc.
+    /// <summary>
+    ///   Handles the Fight between a dancer from each team 
+    /// </summary>
+    /// <param name="teamADancer">A dancer from Team A </param>
+    /// <param name="teamBDancer">A dancer from Team B</param>
+    /// <returns></returns>
     IEnumerator Attack(Character teamADancer, Character teamBDancer)
     {
 
 
        // Let's get the dance power levels from our dancers.
-        int dancerAPowerLevel = teamADancer.ReturnDancePowerLevel();
-        int dancerBPowerLevel = teamBDancer.ReturnDancePowerLevel();
+        float dancerAPowerLevel = teamADancer.ReturnDancePowerLevel(); // Dancer A Power Level 
+        float dancerBPowerLevel = teamBDancer.ReturnDancePowerLevel(); // Dancer B Power Level 
 
-        // Get the players current level from the character and add it to the calculation 
-        int currentDancerALevel = teamADancer.level;
-        int currentDancerBLevel = teamBDancer.level;
+        Debug.Log("[Attack]: " + "Before randomising dance power level for Dancer A: " + dancerAPowerLevel + ", Dancer B: " + dancerBPowerLevel);
 
-
-        // This works for keeping it random but the dancer power level seems to be a bit too high
-        // I may try to do this a different way like dividing by a factor or using a float instead.
-
-        // TODO: Think about this? 
-        dancerAPowerLevel = Random.Range(12, (currentDancerALevel + dancerAPowerLevel) + 1);
-        dancerBPowerLevel = Random.Range(12, (currentDancerBLevel + dancerBPowerLevel) + 1);
-
-      
+        dancerAPowerLevel = Random.Range(30f, dancerAPowerLevel);
+        dancerBPowerLevel = Random.Range(30f, dancerBPowerLevel);
 
 
 
-        var winner = 0;
+        Debug.Log("[Attack]: " + "Team A Dancer Power Level " + dancerAPowerLevel + " VS " + " Team B Dancer Power Level: " + dancerBPowerLevel);
+        // Local variable to store the winner of a round 
+        var winner = 0; // 0 = draw, 1 = Team A Dancer, -1 = Team B Dancer.
+        var winnerDancer = teamADancer; // set the default winner to be character a 
+        var defeatedDancer = teamBDancer; // set default defeated to be character b 
 
-        // by default we set the winner to be character a, for defeated we set it to B.
-        var winnerDancer = teamADancer;
-        var defeatedDancer = teamBDancer;
+        SetUpAttack(teamADancer); // Setup Team A Dancers Dance Animation
+        SetUpAttack(teamBDancer); // Setup Team B Dancers Dance Animation
 
-
-        // We tells each dancer that they are selcted and sets the animation to dance.
-        SetUpAttack(teamADancer);
-        SetUpAttack(teamBDancer);
-
-        // Tells the system to wait X number of seconds until the fight to begins.
+        // Wait X number of seconds until the fight begins!
         yield return new WaitForSeconds(fightAnimTime);
    
-        // Get both players current level 
-        Debug.Log("Dancer " + teamADancer.character_name + " power level is " + dancerAPowerLevel + ", currently fighting dancer " + teamBDancer.character_name + " with a power level of " + dancerBPowerLevel);
-       
+        
+       // If Dancer A's Power Level is greater than Dancer B's Power Level 
         if (dancerAPowerLevel > dancerBPowerLevel)
 		{
             // Dancer from Team A won 
@@ -110,6 +105,7 @@ public class FightManager : MonoBehaviour
             defeatedDancer = teamBDancer;
             winner = 1;
 		}
+        // Otherwise if Dancer A Power Level is Less than Dancer B Power Level 
         else if (dancerAPowerLevel < dancerBPowerLevel)
 		{
             // Dancer from Team B Won
@@ -120,6 +116,7 @@ public class FightManager : MonoBehaviour
 		}
         else
 		{
+            // Check if the power levels are the same on the off chance it was a draw 
             if (dancerAPowerLevel == dancerBPowerLevel)
 			{
                 // It was a draw 
@@ -128,23 +125,37 @@ public class FightManager : MonoBehaviour
 			}
 		}
 
-       float outcome = winner;
+
+        float outcome;
+        // Fight completed outcome takes in a float parameter, so we need to convert the winner from an integer to a float either here or below.
+        if (winner == 0)
+		{
+            outcome = 0f;
+		}
+        else if (winner == -1)
+		{
+            outcome = (float)(-winner * 100f);
+		}
+        else
+            outcome = (float)(winner * 100f);
 
 
 
-        // Pass on the winner/loser and the outcome to our fight completed function.
-        FightCompleted(winnerDancer, defeatedDancer, outcome);
-        yield return null;
+        Debug.Log("[Attack]: " + "Calling FightCompleted with winner " + winnerDancer.character_name + " Defeated Dancer: " + defeatedDancer.character_name + " with the fight outcome " + outcome);   
+        FightCompleted(winnerDancer, defeatedDancer, outcome); // Pass on the winner/loser and the outcome to our fight completed function.
+        yield return null; // Otherwise returns null.
     }
 
     #region Pre-Existing - No Modes Required
     /// <summary>
     /// Is called when two dancers have been selected and begins a fight!
     /// </summary>
-    /// <param name="data"></param>
-    public void Fight(Character TeamA, Character TeamB)
+    /// <param name="p_TeamADancer">A character from Dance Team A</param>
+    /// <param name="p_TeamBDancer">A character from Dance Team B</param>
+    public void Fight(Character p_TeamADancer, Character p_TeamBDancer)
     {
-        StartCoroutine(Attack(TeamA, TeamB));
+        // Starts the the attack between a dancer from both teams.
+        StartCoroutine(Attack(p_TeamADancer, p_TeamBDancer));
     }
 
     /// <summary>

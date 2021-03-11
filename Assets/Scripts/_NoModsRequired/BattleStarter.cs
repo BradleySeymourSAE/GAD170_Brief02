@@ -15,6 +15,7 @@ public class BattleStarter : MonoBehaviour
     public DanceTeamInit danceTeamInit;
     public BattleSystem fightManager;
     public CharacterNameGenerator nameGenerator;
+    public DanceTeamNameGenerator teamNameGenerator;
 
     void Awake()
     {
@@ -23,7 +24,8 @@ public class BattleStarter : MonoBehaviour
 
     IEnumerator FirstRound()  
     {
-        nameGenerator.CreateNames();
+        nameGenerator.CreateNames(); // Create list of names 
+        teamNameGenerator.CreateTeamNames(); // Create list of team names 
         yield return null; //wait a frame
         danceTeamInit.InitTeams();
 
