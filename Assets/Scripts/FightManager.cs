@@ -128,17 +128,20 @@ public class FightManager : MonoBehaviour
 
         float outcome;
         // Fight completed outcome takes in a float parameter, so we need to convert the winner from an integer to a float either here or below.
+       // Should be value between 0f - 100f
         if (winner == 0)
 		{
-            outcome = 0f;
+            // Draw 
+            outcome = winner;
 		}
         else if (winner == -1)
 		{
             outcome = (float)(-winner * 100f);
 		}
         else
+        {
             outcome = (float)(winner * 100f);
-
+        }
 
 
         Debug.Log("[Attack]: " + "Calling FightCompleted with winner " + winnerDancer.character_name + " Defeated Dancer: " + defeatedDancer.character_name + " with the fight outcome " + outcome);   

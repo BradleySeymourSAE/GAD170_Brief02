@@ -325,6 +325,9 @@ public class Character : MonoBehaviour
         // Edit: Moved based points to top of script. 
 
         // Check to see whether the player has reached a milestone 
+        // Edit: Removing for loop and just using the if statement to check for milestone 
+        // after the milestone has been reached just increase the intelligence point by 1 
+        // plus its scaling factor.
 
 
         if (
@@ -347,7 +350,7 @@ public class Character : MonoBehaviour
         // Debuging - Check for milestone 
         Debug.Log("[LevelUp]: " + "Has character reached milestone: " + hasReachedMilestone);
 
-    
+        /*
         for (int i = 1; i <= level; i++)
 		{
             // Check if the value is equal to 10, 25, 50, 75, 99
@@ -360,13 +363,13 @@ public class Character : MonoBehaviour
 
 
         Debug.Log("[LevelUp]: " + "Checking for milestone... " + (intelligencePoint == 0 ? "Milestone Achieved: " + intelligencePoint : "Milestone not achieved." + intelligencePoint));
-
+*/
 
         // IF the character has reached a milestone 
         if (hasReachedMilestone == true)
 		{
            // Add scaling factor to intelligence point 
-           intelligencePoint += skillPointScaling;
+           intelligencePoint += (1 + skillPointScaling);
 		}
 
         // Update the characters physical stats. Add intelligence points & reachedMilestone value to be handled by stats on level up.
@@ -385,14 +388,7 @@ public class Character : MonoBehaviour
         int newStrength, // local var for storing new strength points 
             newAgility; // local var for storing new agility points
 
-        if (p_intelligencePoints >= 1 && hasReachedMilestone == true)
-        {
-            // Add the intelligence point(s) to the current character
-            intelligence += p_intelligencePoints;
-
-            // We want to reset has reached milestone value after we have done this otherwise this will
-            // be called every level up.
-        }
+        // Removed duplicate check for intelligence points. 
 
 
         // Check to see whether the characters agility is greater than strength 
@@ -402,8 +398,9 @@ public class Character : MonoBehaviour
             // Random integer value calculated for strength local var 
             newStrength = Random.Range(1, p_PointsPool);
 
-            // Remove points from the skill points pool.
-            p_PointsPool -= strength;
+            // Remove points from the skill points pool. 
+            // Fixed error, was calculating strength here for some reason? 
+            p_PointsPool -= newStrength;
 
             // Add points to the characters strength and agility. 
             strength += newStrength;
@@ -455,7 +452,7 @@ public class Character : MonoBehaviour
             strength += Random.Range(1, 3);
 
             // Increase intelligence by point.
-            intelligence += 1;
+            intelligence += p_intelligencePoints;
 
             Debug.Log("[DistributePhysicalStatsOnLevelUp]: " + "Reached milestone: " + hasReachedMilestone + " Adding Agility: " + agility + " Strength: " + strength + " Intelligence: " + intelligence);
 
